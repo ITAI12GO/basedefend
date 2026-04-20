@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ETYK Battle Royale</title>
+<style>
+  :root{
+    --bg:#07080d;
+    --panel-bg:#0a0c14;
+    --grid:#1b2030;
+    --ink:#e8ecff;
+    --muted:#8a92b0;
+    --accent:#ff3366;
+    --t0-core:#39ff14; --t0-glow:#a6ff8c; --t0-dark:#0a2a05;
+    --t1-core:#ff2bd6; --t1-glow:#ffa8ef; --t1-dark:#2a0520;
+    --t2-core:#ffea00; --t2-glow:#fff38a; --t2-dark:#2a2505;
+    --t3-core:#00e7ff; --t3-glow:#9df1ff; --t3-dark:#052a2a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink)}
+  #app{display:flex;flex-direction:column;height:100vh;width:100vw}
+
+  /* Top bar */
+  header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:#060810;border-bottom:1px solid #151a2a;z-index:10}
+  header h1{margin:0;font-size:16px;letter-spacing:3px;color:#fff;text-shadow:0 0 8px rgba(255,255,255,.4);font-weight:600}
+  header h1 span{color:#ff2bd6;text-shadow:0 0 12px #ff2bd6}
+  .spacer{flex:1}
+  .btn{background:#10141f;border:1px solid #2a3350;color:var(--ink);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;letter-spacing:1px;text-transform:uppercase;transition:all .15s}
+  .btn:hover{border-color:#4a5580;background:#161b2c}
+  .btn.primary{background:linear-gradient(135deg,#2a3d7a,#1d2a55);border-color:#4a5fb0}
+  .btn.danger{background:#3a1222;border-color:#7a2240;color:#ffb0c3}
+  .btn.active{background:#ff2bd6;border-color:#ff2bd6;color:#000;text-shadow:none}
+  .status{font-size:11px;color:var(--muted);letter-spacing:1px}
+  .status b{color:#fff}
+
+  /* Arena grid */
+  main{flex:1;position:relative;overflow:hidden;background:#05060c}
+  #team-strip{display:contents} /* desktop: children absolute-positioned within main */
+  #arena-container{position:absolute;inset:0;z-index:1}
+  #arena{position:absolute;inset:0;display:block}
+  .hud-panel{z-index:5} /* always on top of the arena */
+
+  /* ===== UNIT LEGEND (on-arena) ===== */
+  #unit-legend{
+    position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    z-index:4;pointer-events:auto;
+    background:rgba(6,8,16,.85);border:1px solid rgba(255,255,255,.15);
+    border-radius:8px;backdrop-filter:blur(4px);
+    box-shadow:0 2px 16px rgba(0,0,0,.5);
+    display:flex;align-items:flex-start;
+    transition:all .18s ease
+  }
+  #unit-legend.collapsed #legend-content{display:none}
+  #unit-legend.collapsed{padding:0}
+  #legend-toggle{
+    background:#10141f;border:1px solid #2a3350;color:var(--ink);
+    width:36px;height:36px;border-radius:8px;cursor:pointer;
+    font-size:16px;font-weight:700;font-family:inherit;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s
+  }
+  #legend-toggle:hover{border-color:#4a5580;background:#1b2030}
+  #unit-legend:not(.collapsed){padding:10px 12px 10px 10px}
+  #unit-legend:not(.collapsed) #legend-toggle{
+    background:transparent;border-color:transparent;width:24px;height:24px;
+    font-size:14px;margin-right:6px
+  }
+  #legend-content{display:flex;flex-direction:column;gap:4px;min-width:170px}
+  .legend-title{font-size:10px;letter-spacing:2px;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase;text-align:center}
+  .legend-row{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;font-size:11px;color:#ccd2e8}
+  .lg-svg{width:22px;height:22px;display:block}
+  .lg-name{font-weight:500}
+  .lg-cost{color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums}
+  .legend-divider{height:1px;background:rgba(255,255,255,.1);margin:4px 0}
+
+  /* ===== HUD larger fonts (desktop baseline) ===== */
+  .hud-head{margin-bottom:10px;padding-bottom:8px}
+  .hud-name{font-weight:700;letter-spacing:2px;font-size:14px}
+  .hud-wins{font-size:12px;color:var(--muted)}
+  .hud-wins b{font-size:17px;color:#fff}
+  .hud-stats{display:flex;justify-content:space-between;gap:8px;margin-bottom:10px;font-size:12px}
+  .hud-gold{font-size:22px;font-weight:700;letter-spacing:1px}
+  .hud-kills{color:var(--muted);align-self:end;font-size:11px;line-height:1.35}
+  .hud-kills b{color:#fff;font-size:14px}
+  .hud-base-label{font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between}
+  .hud-base-label span{color:#fff;font-variant-numeric:tabular-nums;font-size:12px}
+  .hud-base-bar{height:7px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+  .hud-panel{position:absolute;width:clamp(290px, 23vw, 320px);padding:10px;background:rgba(6,8,16,.82);border:2px solid;border-radius:8px;backdrop-filter:blur(4px);pointer-events:none;font-size:11px;box-shadow:0 0 20px rgba(0,0,0,.6) inset;overflow:hidden}
+  .hud-panel.t0{top:12px;left:12px;border-color:var(--t0-core);box-shadow:0 0 14px var(--t0-dark),inset 0 0 20px rgba(0,0,0,.7)}
+  .hud-panel.t1{top:12px;right:12px;border-color:var(--t1-core);box-shadow:0 0 14px var(--t1-dark),inset 0 0 20px rgba(0,0,0,.7)}
+  .hud-panel.t2{bottom:12px;left:12px;border-color:var(--t2-core);box-shadow:0 0 14px var(--t2-dark),inset 0 0 20px rgba(0,0,0,.7)}
+  .hud-panel.t3{bottom:12px;right:12px;border-color:var(--t3-core);box-shadow:0 0 14px var(--t3-dark),inset 0 0 20px rgba(0,0,0,.7)}
+  .hud-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+  .hud-shop{display:flex;flex-wrap:nowrap;gap:4px;width:100%}
+  .hud-tier{flex:1 1 0;min-width:0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);padding:6px 2px;border-radius:4px;text-align:center;font-size:9px;line-height:1.25;overflow:hidden}
+  .hud-tier .tn{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.3px}
+  .hud-tier b{display:block;font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hud-panel.t0 .hud-name{color:var(--t0-core);text-shadow:0 0 6px var(--t0-core)}
+  .hud-panel.t1 .hud-name{color:var(--t1-core);text-shadow:0 0 6px var(--t1-core)}
+  .hud-panel.t2 .hud-name{color:var(--t2-core);text-shadow:0 0 6px var(--t2-core)}
+  .hud-panel.t3 .hud-name{color:var(--t3-core);text-shadow:0 0 6px var(--t3-core)}
+  .hud-panel.t0 .hud-gold{color:var(--t0-core)}
+  .hud-panel.t1 .hud-gold{color:var(--t1-core)}
+  .hud-panel.t2 .hud-gold{color:var(--t2-core)}
+  .hud-panel.t3 .hud-gold{color:var(--t3-core)}
+  .hud-panel.inactive{opacity:.25;filter:grayscale(.7)}
+  .hud-panel.defeated{opacity:.55;filter:grayscale(.85)}
+  .hud-panel.defeated::after{content:'BASE DESTROYED';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.7);color:#ff6080;padding:4px 12px;border-radius:4px;font-weight:700;letter-spacing:3px;font-size:12px;white-space:nowrap}
+  .hud-panel.eliminated::after{content:'ELIMINATED';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.65);color:var(--accent);font-weight:700;letter-spacing:4px;font-size:14px;border-radius:6px}
+  .hud-base{margin:8px 0 10px 0}
+  .hud-base-fill{height:100%;transition:width .2s ease}
+  .hud-panel.t0 .hud-base-fill{background:var(--t0-core);box-shadow:0 0 8px var(--t0-core)}
+  .hud-panel.t1 .hud-base-fill{background:var(--t1-core);box-shadow:0 0 8px var(--t1-core)}
+  .hud-panel.t2 .hud-base-fill{background:var(--t2-core);box-shadow:0 0 8px var(--t2-core)}
+  .hud-panel.t3 .hud-base-fill{background:var(--t3-core);box-shadow:0 0 8px var(--t3-core)}
+
+  /* Progress bar */
+  #progress-wrap{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:min(60%,600px);height:6px;background:#0a0c14;border:1px solid #1a1f30;border-radius:3px;overflow:hidden;pointer-events:none}
+  #progress{height:100%;background:linear-gradient(90deg,#ff3366,#ff2bd6);width:0%;transition:width .3s ease;box-shadow:0 0 10px #ff2bd6}
+  #progress-label{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:2px;color:var(--muted)}
+
+  /* Settings modal */
+  #settings-modal,#gameover-modal{position:fixed;inset:0;background:rgba(3,4,10,.88);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(6px)}
+  .modal-inner{background:#0a0c14;border:1px solid #2a3350;border-radius:12px;padding:28px;max-width:640px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 10px 60px rgba(255,43,214,.15)}
+  .modal-inner h2{margin:0 0 6px 0;font-size:22px;letter-spacing:3px;font-weight:600}
+  .modal-inner h2 span{color:#ff2bd6;text-shadow:0 0 12px #ff2bd6}
+  .modal-inner .sub{color:var(--muted);font-size:12px;margin-bottom:22px;letter-spacing:.5px}
+  .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 24px;margin-bottom:22px}
+  .setting label{display:block;font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:6px;text-transform:uppercase}
+  .setting .opts{display:flex;gap:6px;flex-wrap:wrap}
+  .opt{flex:1;min-width:40px;background:#10141f;border:1px solid #2a3350;color:var(--ink);padding:7px 6px;border-radius:4px;cursor:pointer;font-size:11px;text-align:center;transition:all .12s}
+  .opt:hover{border-color:#4a5580}
+  .opt.selected{background:#ff2bd6;border-color:#ff2bd6;color:#000;font-weight:600}
+  .setting .range-row{display:flex;align-items:center;gap:10px}
+  .setting input[type=range]{flex:1;accent-color:#ff2bd6}
+  .setting .val{min-width:46px;text-align:right;font-variant-numeric:tabular-nums;color:#fff;font-size:12px}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+  .live-hint b{color:#8cff8c}
+  .setting[data-live="1"] label::after{content:' • LIVE';color:#8cff8c;font-size:9px;letter-spacing:1px}
+  .setting[data-live="0"] label::after{content:' • ON RESET';color:#ffa060;font-size:9px;letter-spacing:1px}
+  .legend{background:#060810;border:1px solid #1a1f30;border-radius:6px;padding:12px;margin-bottom:20px}
+  .legend h3{margin:0 0 8px 0;font-size:10px;letter-spacing:2px;color:var(--muted);font-weight:600;text-transform:uppercase}
+  .legend-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px}
+  .legend-grid div{display:flex;align-items:center;gap:8px}
+  .legend-swatch{width:14px;height:14px;border-radius:3px;box-shadow:0 0 8px currentColor}
+
+  .team-names{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+  .team-name-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:6px 10px;transition:border-color .15s}
+  .team-name-row:focus-within{border-color:rgba(255,43,214,.6)}
+  .team-name-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+  .team-name-row input{flex:1;min-width:0;background:transparent;border:none;color:#fff;outline:none;font-size:12px;letter-spacing:1px;font-family:inherit}
+  .team-name-row input::placeholder{color:var(--muted);letter-spacing:2px}
+
+  /* Gameover */
+  #gameover-modal{display:none}
+  #gameover-modal .winner-banner{font-size:44px;font-weight:700;text-align:center;margin:10px 0 4px 0;letter-spacing:4px}
+  #gameover-modal .reason{text-align:center;color:var(--muted);margin-bottom:24px;font-size:12px;letter-spacing:2px;text-transform:uppercase}
+  .standings{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:20px}
+  .standing{display:grid;grid-template-columns:30px 1fr auto auto;gap:12px;align-items:center;padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:6px;font-size:13px}
+  .standing .pos{font-weight:700;color:var(--muted)}
+  .standing .nm{font-weight:600;letter-spacing:1px}
+  .standing .wins,.standing .kills{font-size:11px;color:var(--muted)}
+
+  /* Toast */
+  #toast{position:fixed;top:72px;left:50%;transform:translateX(-50%);background:rgba(10,12,20,.95);border:1px solid #ff2bd6;color:#fff;padding:10px 18px;border-radius:6px;font-size:12px;letter-spacing:1px;z-index:200;pointer-events:none;opacity:0;transition:opacity .3s;box-shadow:0 0 20px rgba(255,43,214,.4)}
+  #toast.show{opacity:1}
+
+  @media (max-width:900px){
+    .hud-panel{width:clamp(240px, 32vw, 280px);font-size:10px;padding:7px}
+    .hud-tier{font-size:7px}
+    .hud-tier b{font-size:10px}
+    .hud-gold{font-size:14px}
+    .settings-grid{grid-template-columns:1fr}
+  }
+
+  /* ===== PHONE / SHORT-LANDSCAPE / SMALL TABLET PORTRAIT ===== */
+  /* Triggers when width ≤ 800px OR height ≤ 500px (phone landscape) */
+  @media (max-width:800px), (max-height:500px){
+    /* Compact header */
+    header{padding:6px 8px;gap:6px;flex-wrap:wrap}
+    header h1{font-size:12px;letter-spacing:2px}
+    header .status{display:none}
+    header .btn{padding:7px 10px;font-size:10px;letter-spacing:.5px;min-width:44px;min-height:36px}
+
+    /* Switch main to flex column: strip on top, arena below */
+    main{display:flex;flex-direction:column}
+    #team-strip{
+      display:flex;flex-direction:row;flex:0 0 auto;
+      gap:4px;padding:4px;overflow:hidden;
+      background:#060810;border-bottom:1px solid #1a1f30;
+    }
+    #arena-container{position:relative;flex:1 1 0;min-height:0}
+
+    /* Panels become compact flex items sharing width equally */
+    .hud-panel{
+      position:relative!important;inset:auto!important;
+      top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;
+      width:auto!important;min-width:0!important;max-width:none!important;
+      flex:1 1 0;padding:4px 6px;font-size:9px;
+      backdrop-filter:none;overflow:hidden
+    }
+    .hud-head{margin-bottom:2px;padding-bottom:2px}
+    .hud-name{font-size:9px;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .hud-wins{font-size:7px;white-space:nowrap}
+    .hud-wins b{font-size:10px}
+    .hud-base{margin:2px 0}
+    .hud-base-label{font-size:7px;margin-bottom:2px}
+    .hud-base-label span{font-size:8px}
+    .hud-base-bar{height:4px}
+    .hud-stats{margin-bottom:2px;gap:4px;font-size:8px}
+    .hud-gold{font-size:12px}
+    .hud-kills{font-size:7px;line-height:1.2;text-align:right}
+    .hud-kills b{font-size:8px}
+    .hud-shop{display:none!important}
+
+    /* Legend smaller on mobile */
+    #unit-legend{top:6px;right:6px;left:auto;transform:none}
+    #legend-toggle{width:32px;height:32px;font-size:14px}
+    #unit-legend:not(.collapsed) #legend-content{max-height:60vh;overflow-y:auto}
+    #legend-content{min-width:150px}
+    .legend-row{font-size:10px}
+
+    /* defeated/eliminated badge sizing */
+    .hud-panel.eliminated::after{font-size:9px;letter-spacing:1.5px;padding:2px 4px;inset:0;display:flex;align-items:center;justify-content:center}
+    .hud-panel.defeated::after{font-size:8px;letter-spacing:.5px;padding:2px 4px}
+
+    /* Progress bar smaller */
+    #progress-label{display:none}
+    #progress-wrap{bottom:3px;width:70%;height:3px}
+
+    /* Settings modal tighter */
+    .modal-inner{padding:16px;width:94%;max-height:94vh}
+    .modal-inner h2{font-size:18px;letter-spacing:2px}
+    .modal-inner .sub{font-size:11px;margin-bottom:14px}
+    .settings-grid{gap:12px}
+    .legend-grid{grid-template-columns:1fr;font-size:10px}
+    .team-names{grid-template-columns:1fr;gap:6px}
+    .opt{font-size:10px;padding:8px 6px;min-height:36px}   /* bigger tap targets */
+    .modal-actions .btn{padding:10px 16px;min-height:40px}
+    input[type=range]{height:30px}   /* easier to drag */
+  }
+
+  /* ===== 4-team strip on narrow phones: drop to 2x2 grid so cards aren't too squeezed ===== */
+  /* Only applies to very narrow devices where 4-in-a-row would be unreadable */
+  @media (max-width:480px){
+    #team-strip{
+      display:grid!important;
+      grid-template-columns:1fr 1fr;
+      gap:4px;padding:4px
+    }
+    .hud-panel{flex:none}
+  }
+
+  /* ===== TINY PHONES (<360px wide) ===== */
+  @media (max-width:360px){
+    header h1{display:none}
+    header .btn{padding:6px 9px;font-size:9px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>ETYK <span>BATTLE</span> ROYALE</h1>
+    <div class="spacer"></div>
+    <span class="status" id="mode-status">Mode: <b id="mode-label">—</b></span>
+    <span class="status" id="time-status">Time: <b id="time-label">0:00</b></span>
+    <span class="status" id="round-status">Round: <b id="round-label">1</b></span>
+    <button class="btn" id="btn-settings">⚙ Settings</button>
+    <button class="btn primary" id="btn-pause">❚❚ Pause</button>
+    <button class="btn danger" id="btn-reset">↻ Reset</button>
+  </header>
+
+  <main>
+    <div id="team-strip">
+      <div class="hud-panel t0" id="hud-0"></div>
+      <div class="hud-panel t1" id="hud-1"></div>
+      <div class="hud-panel t2" id="hud-2"></div>
+      <div class="hud-panel t3" id="hud-3"></div>
+    </div>
+    <div id="arena-container">
+      <canvas id="arena"></canvas>
+      <div id="unit-legend" class="collapsed">
+        <button id="legend-toggle" type="button" title="Toggle legend">?</button>
+        <div id="legend-content">
+          <div class="legend-title">UNIT GUIDE</div>
+          <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><circle cx="10" cy="7" r="3.4" fill="#bbb"/><rect x="8.7" y="9" width="2.6" height="7" fill="#bbb"/></svg><span class="lg-name">Scout</span><span class="lg-cost">2G</span></div>
+          <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><circle cx="10" cy="7" r="4" fill="#bbb"/><rect x="8.4" y="9" width="3.2" height="8" fill="#bbb"/></svg><span class="lg-name">Soldier</span><span class="lg-cost">10G</span></div>
+          <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><circle cx="10" cy="7" r="4.4" fill="#bbb"/><rect x="8.1" y="9" width="3.8" height="9" fill="#bbb"/></svg><span class="lg-name">Heavy</span><span class="lg-cost">20G</span></div>
+          <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><circle cx="10" cy="6.5" r="4.8" fill="#bbb"/><rect x="7.7" y="9" width="4.6" height="9.5" fill="#bbb"/></svg><span class="lg-name">Elite</span><span class="lg-cost">40G</span></div>
+          <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><circle cx="10" cy="6" r="5.3" fill="#bbb"/><rect x="7.2" y="9" width="5.6" height="10" fill="#bbb"/></svg><span class="lg-name">Champion</span><span class="lg-cost">80G</span></div>
+          <div class="legend-divider"></div>
+          <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><polyline points="6,9 10,5 14,9" stroke="#bbb" stroke-width="1.5" fill="none"/><circle cx="10" cy="13" r="3" fill="#bbb"/></svg><span class="lg-name">▲ Rusher</span><span class="lg-cost">→ base</span></div>
+          <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><polygon points="10,2 17,10 10,18 3,10" stroke="#bbb" stroke-width="1.5" fill="none"/></svg><span class="lg-name">Base</span><span class="lg-cost">HQ</span></div>
+          <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><rect x="6" y="5" width="8" height="10" stroke="#bbb" stroke-width="1.5" fill="none"/><line x1="7.5" y1="8" x2="12.5" y2="8" stroke="#bbb" stroke-width="1"/><line x1="7.5" y1="12" x2="12.5" y2="12" stroke="#bbb" stroke-width="1"/></svg><span class="lg-name">Spawner</span><span class="lg-cost">produces</span></div>
+        </div>
+      </div>
+      <div id="progress-label">ROUND PROGRESS</div>
+      <div id="progress-wrap"><div id="progress"></div></div>
+    </div>
+  </main>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal">
+  <div class="modal-inner">
+    <h2>GAME <span>SETUP</span></h2>
+    <div class="sub">Configure your battle. All settings apply on reset.</div>
+
+    <div class="legend">
+      <h3>Team Legend</h3>
+      <div class="legend-grid">
+        <div><span class="legend-swatch" style="background:var(--t0-core);color:var(--t0-core)"></span>Team 1 — Lime (top-left)</div>
+        <div><span class="legend-swatch" style="background:var(--t1-core);color:var(--t1-core)"></span>Team 2 — Magenta (top-right)</div>
+        <div><span class="legend-swatch" style="background:var(--t2-core);color:var(--t2-core)"></span>Team 3 — Yellow (bottom-left)</div>
+        <div><span class="legend-swatch" style="background:var(--t3-core);color:var(--t3-core)"></span>Team 4 — Cyan (bottom-right)</div>
+      </div>
+    </div>
+
+    <div class="settings-grid">
+      <div class="setting" data-live="0">
+        <label>Number of Teams</label>
+        <div class="opts" data-key="teamCount">
+          <div class="opt" data-val="2">2</div>
+          <div class="opt" data-val="3">3</div>
+          <div class="opt selected" data-val="4">4</div>
+        </div>
+      </div>
+
+      <div class="setting" data-live="1">
+        <label>Weapon Type</label>
+        <div class="opts" data-key="weapon">
+          <div class="opt selected" data-val="standard">Standard</div>
+          <div class="opt" data-val="rapid">Rapid</div>
+          <div class="opt" data-val="heavy">Heavy</div>
+          <div class="opt" data-val="sniper">Sniper</div>
+          <div class="opt" data-val="spread">Spread</div>
+        </div>
+      </div>
+
+      <div class="setting" data-live="0" style="grid-column:1 / -1">
+        <label>Team Names <span style="color:var(--muted);text-transform:none;font-size:10px;letter-spacing:0;font-weight:400">— optional, leave blank for defaults</span></label>
+        <div class="team-names" id="team-names-inputs">
+          <div class="team-name-row" data-team-row="0">
+            <span class="team-name-dot" style="background:var(--t0-core);box-shadow:0 0 8px var(--t0-core)"></span>
+            <input type="text" maxlength="14" placeholder="LIME" data-team-id="0" />
+          </div>
+          <div class="team-name-row" data-team-row="1">
+            <span class="team-name-dot" style="background:var(--t1-core);box-shadow:0 0 8px var(--t1-core)"></span>
+            <input type="text" maxlength="14" placeholder="MAGENTA" data-team-id="1" />
+          </div>
+          <div class="team-name-row" data-team-row="2">
+            <span class="team-name-dot" style="background:var(--t2-core);box-shadow:0 0 8px var(--t2-core)"></span>
+            <input type="text" maxlength="14" placeholder="YELLOW" data-team-id="2" />
+          </div>
+          <div class="team-name-row" data-team-row="3">
+            <span class="team-name-dot" style="background:var(--t3-core);box-shadow:0 0 8px var(--t3-core)"></span>
+            <input type="text" maxlength="14" placeholder="CYAN" data-team-id="3" />
+          </div>
+        </div>
+      </div>
+
+      <div class="setting" data-live="1">
+        <label>Fire Rate</label>
+        <div class="range-row">
+          <input type="range" id="fireRate" min="0.5" max="3" step="0.1" value="1" />
+          <span class="val" id="fireRate-val">1.0×</span>
+        </div>
+      </div>
+
+      <div class="setting" data-live="1">
+        <label>Movement Speed</label>
+        <div class="range-row">
+          <input type="range" id="speed" min="0.4" max="2.5" step="0.1" value="1" />
+          <span class="val" id="speed-val">1.0×</span>
+        </div>
+      </div>
+
+      <div class="setting" data-live="0">
+        <label>Starting Gold</label>
+        <div class="range-row">
+          <input type="range" id="startGold" min="10" max="200" step="5" value="30" />
+          <span class="val" id="startGold-val">30G</span>
+        </div>
+      </div>
+
+      <div class="setting" data-live="1">
+        <label>Gold Income Rate</label>
+        <div class="range-row">
+          <input type="range" id="goldRate" min="0.5" max="3" step="0.1" value="1" />
+          <span class="val" id="goldRate-val">1.0×</span>
+        </div>
+      </div>
+
+      <div class="setting" data-live="0" style="grid-column:1 / -1">
+        <label>Game Mode</label>
+        <div class="opts" data-key="mode">
+          <div class="opt selected" data-val="rounds">First to N Wins</div>
+          <div class="opt" data-val="timed">Timed Match</div>
+          <div class="opt" data-val="elimination">Last Team Standing</div>
+          <div class="opt" data-val="gold">Gold Race</div>
+        </div>
+      </div>
+
+      <div class="setting" data-live="0" id="setting-target">
+        <label id="target-label">Win Target</label>
+        <div class="range-row">
+          <input type="range" id="target" min="1" max="15" step="1" value="5" />
+          <span class="val" id="target-val">5</span>
+        </div>
+      </div>
+
+      <div class="setting" data-live="1">
+        <label>Unit Cap (per team)</label>
+        <div class="range-row">
+          <input type="range" id="unitCap" min="10" max="60" step="2" value="30" />
+          <span class="val" id="unitCap-val">30</span>
+        </div>
+      </div>
+
+      <div class="setting" data-live="0" id="setting-baseHealth">
+        <label>Base Health <span style="color:var(--muted);text-transform:none;font-size:10px;letter-spacing:0;font-weight:400">— team loses when base hits 0</span></label>
+        <div class="range-row">
+          <input type="range" id="baseHealth" min="100" max="1500" step="50" value="300" />
+          <span class="val" id="baseHealth-val">300 HP</span>
+        </div>
+      </div>
+
+      <div class="setting" data-live="1" id="setting-baseRegen">
+        <label>Base Regen <span style="color:var(--muted);text-transform:none;font-size:10px;letter-spacing:0;font-weight:400">— HP/sec, 0 = off</span></label>
+        <div class="range-row">
+          <input type="range" id="baseRegenRate" min="0" max="10" step="0.5" value="0" />
+          <span class="val" id="baseRegenRate-val">0 HP/s</span>
+        </div>
+      </div>
+
+      <div class="setting" data-live="1" id="setting-turret">
+        <label>Turret Fire Rate <span style="color:var(--muted);text-transform:none;font-size:10px;letter-spacing:0;font-weight:400">— base defence, 0 = disabled</span></label>
+        <div class="range-row">
+          <input type="range" id="turretFireRateMul" min="0" max="3" step="0.1" value="1" />
+          <span class="val" id="turretFireRateMul-val">1.0×</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <div class="live-hint" id="live-hint" style="flex:1;align-self:center;font-size:11px;color:var(--muted);letter-spacing:.5px"></div>
+      <button class="btn" id="btn-defaults">Defaults</button>
+      <button class="btn" id="btn-close-settings" style="display:none">× Close</button>
+      <button class="btn primary" id="btn-start">▶ Start Battle</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game over -->
+<div id="gameover-modal">
+  <div class="modal-inner">
+    <h2>MATCH <span>ENDED</span></h2>
+    <div class="winner-banner" id="winner-banner">—</div>
+    <div class="reason" id="winner-reason">—</div>
+    <div class="standings" id="standings"></div>
+    <div class="modal-actions">
+      <button class="btn" id="btn-replay">↻ Rematch</button>
+      <button class="btn primary" id="btn-newsetup">⚙ New Setup</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   ETYK BATTLE ROYALE
+   Single-file canvas auto-battler inspired by the reference clip.
+   ============================================================ */
+
+'use strict';
+
+// -------- CONFIG / DATA --------
+const WEAPONS = {
+  standard: { damage:12, speed:460, fireRate:900,  range:230, color:'#ffffff', name:'Standard' },
+  rapid:    { damage:5,  speed:520, fireRate:260,  range:200, color:'#ffe17a', name:'Rapid'    },
+  heavy:    { damage:32, speed:340, fireRate:1700, range:260, color:'#ff7be3', name:'Heavy'    },
+  sniper:   { damage:55, speed:780, fireRate:2600, range:460, color:'#9cfcff', name:'Sniper'   },
+  spread:   { damage:8,  speed:420, fireRate:1100, range:210, color:'#b4ff6d', name:'Spread', shots:3, spreadArc:0.5 }
+};
+
+// tier scaling: cost -> hp/power
+const TIERS = [
+  { index:0, cost:2,  hp:22,  spdMul:1.10, dmgMul:0.90, rangeMul:1.00, r:7.5,  tag:'Scout'    },
+  { index:1, cost:10, hp:55,  spdMul:1.00, dmgMul:1.00, rangeMul:1.00, r:8.5,  tag:'Soldier'  },
+  { index:2, cost:20, hp:110, spdMul:0.92, dmgMul:1.15, rangeMul:1.05, r:9.5,  tag:'Heavy'    },
+  { index:3, cost:40, hp:210, spdMul:0.84, dmgMul:1.35, rangeMul:1.10, r:10.5, tag:'Elite'    },
+  { index:4, cost:80, hp:420, spdMul:0.78, dmgMul:1.65, rangeMul:1.15, r:12,   tag:'Champion' }
+];
+
+const TEAM_DEFS = [
+  { id:0, name:'LIME',    core:'#39ff14', glow:'#a6ff8c', dark:'#0f3a05', corner:'tl', shape:'diamond' },
+  { id:1, name:'MAGENTA', core:'#ff2bd6', glow:'#ffa8ef', dark:'#3a0528', corner:'tr', shape:'hexagon' },
+  { id:2, name:'YELLOW',  core:'#ffea00', glow:'#fff38a', dark:'#3a3005', corner:'bl', shape:'star'    },
+  { id:3, name:'CYAN',    core:'#00e7ff', glow:'#9df1ff', dark:'#053a3a', corner:'br', shape:'octagon' }
+];
+
+const DEFAULTS = {
+  teamCount:4, weapon:'standard', fireRateMul:1, speedMul:1,
+  startGold:30, goldRateMul:1, mode:'rounds', target:5, unitCap:30,
+  baseHealth:300, baseRegenRate:0, turretFireRateMul:1,
+  teamNames: ['','','','']   // empty string = use default team name
+};
+
+// Modes that use the "base health" mechanic:
+const BASE_HP_MODES = new Set(['rounds','elimination']);
+
+// -------- STATE --------
+const state = {
+  settings: {...DEFAULTS},
+  teams: [],
+  units: [],
+  projectiles: [],
+  particles: [],
+  goldPickups: [],
+  arena: { x:0, y:0, w:0, h:0, pad:260 }, // pad reserved for corner HUD panels
+  running:false,
+  paused:false,
+  matchOver:false,
+  roundOver:false,
+  roundOverAt:0,
+  roundTime:0,
+  matchTime:0,
+  roundNum:1,
+  // timings
+  lastFrame:0,
+  goldTickAcc:0,
+  pendingStructural:false,
+};
+
+// -------- ELEMENTS --------
+const canvas = document.getElementById('arena');
+const ctx = canvas.getContext('2d');
+const huds = [0,1,2,3].map(i => document.getElementById('hud-'+i));
+
+// -------- UTIL --------
+const rand = (a,b)=>a+Math.random()*(b-a);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const dist=(ax,ay,bx,by)=>Math.hypot(ax-bx,ay-by);
+function toast(msg, ms=1800){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._tm);
+  toast._tm = setTimeout(()=>t.classList.remove('show'), ms);
+}
+
+// -------- CANVAS SIZING --------
+function resize(){
+  const container = document.getElementById('arena-container');
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  const rect = container.getBoundingClientRect();
+  const w = Math.max(100, Math.round(rect.width));
+  const h = Math.max(100, Math.round(rect.height));
+  canvas.width = w*dpr; canvas.height = h*dpr;
+  canvas.style.width = w+'px'; canvas.style.height = h+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  state.arena.w = w;
+  state.arena.h = h;
+  state.arena.x = 0;
+  state.arena.y = 0;
+  // recompute spawner positions based on new size
+  if (state.teams.length) layoutSpawners();
+}
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 120));
+
+// -------- SETTINGS UI --------
+// Settings that can be changed mid-match without restarting
+const LIVE_KEYS = new Set([
+  'weapon', 'fireRateMul', 'speedMul', 'goldRateMul',
+  'unitCap', 'baseRegenRate', 'turretFireRateMul'
+]);
+// Settings that only take effect on reset (change team count, start gold, etc.)
+const STRUCTURAL_KEYS = new Set([
+  'teamCount', 'teamNames', 'startGold', 'mode', 'target', 'baseHealth'
+]);
+
+function bindSettings(){
+  // option pills
+  document.querySelectorAll('.opts').forEach(group => {
+    const key = group.dataset.key;
+    group.addEventListener('click', e => {
+      if (!e.target.classList.contains('opt')) return;
+      group.querySelectorAll('.opt').forEach(o=>o.classList.remove('selected'));
+      e.target.classList.add('selected');
+      const raw = e.target.dataset.val;
+      const newVal = isNaN(+raw) ? raw : +raw;
+      state.settings[key] = newVal;
+      if (key==='mode'){ updateTargetLabel(); updateBaseHealthVisibility(); }
+      if (key==='teamCount') updateTeamNameRowVisibility();
+      onSettingChanged(key);
+    });
+  });
+  // sliders
+  const bind=(id,key,fmt)=>{
+    const el=document.getElementById(id);
+    const val=document.getElementById(id+'-val');
+    el.addEventListener('input',()=>{
+      state.settings[key] = +el.value;
+      val.textContent = fmt(+el.value);
+      onSettingChanged(key);
+    });
+  };
+  bind('fireRate','fireRateMul',v=>v.toFixed(1)+'×');
+  bind('speed','speedMul',v=>v.toFixed(1)+'×');
+  bind('startGold','startGold',v=>v+'G');
+  bind('goldRate','goldRateMul',v=>v.toFixed(1)+'×');
+  bind('target','target',v=>String(v));
+  bind('unitCap','unitCap',v=>String(v));
+  bind('baseHealth','baseHealth',v=>v+' HP');
+  bind('baseRegenRate','baseRegenRate',v=>v+' HP/s');
+  bind('turretFireRateMul','turretFireRateMul',v=>(+v).toFixed(1)+'×');
+  // team name inputs
+  document.querySelectorAll('#team-names-inputs input[data-team-id]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const id = +inp.dataset.teamId;
+      state.settings.teamNames[id] = inp.value.toUpperCase();
+      inp.value = inp.value.toUpperCase();
+      onSettingChanged('teamNames');
+    });
+  });
+}
+
+// Called whenever any setting changes. Apply live changes immediately (if running);
+// track structural changes so we can warn the user when they close settings.
+function onSettingChanged(key){
+  if (state.running && LIVE_KEYS.has(key)){
+    applyLiveSettings();
+  }
+  if (state.running && STRUCTURAL_KEYS.has(key)){
+    state.pendingStructural = true;
+  }
+  updateLiveHint();
+}
+
+// Apply live settings to existing units + teams (mid-match, no restart)
+function applyLiveSettings(){
+  const weapon = WEAPONS[state.settings.weapon];
+  for (const u of state.units){
+    if (u.dead) continue;
+    // Swap weapon type
+    u.weapon = weapon;
+    // Re-derive speed (keeps per-tier multiplier)
+    const baseSpeed = 58 * state.settings.speedMul * u.tier.spdMul;
+    u.speed = baseSpeed;
+    // Re-derive fire interval
+    u.fireInterval = weapon.fireRate / state.settings.fireRateMul;
+  }
+}
+
+function updateLiveHint(){
+  const hint = document.getElementById('live-hint');
+  if (!hint) return;
+  if (!state.running){
+    hint.innerHTML = '';
+    document.getElementById('btn-start').textContent = '▶ Start Battle';
+  } else if (state.pendingStructural){
+    hint.innerHTML = '<b style="color:#ffa060">⚠ Structural changes — click Reset to apply</b>';
+    document.getElementById('btn-start').textContent = '↻ Reset & Apply';
+  } else {
+    hint.innerHTML = '<b>✓ Live changes applied</b> — click Close to resume';
+    document.getElementById('btn-start').textContent = '↻ Reset Match';
+  }
+}
+
+function updateTeamNameRowVisibility(){
+  const count = state.settings.teamCount;
+  document.querySelectorAll('.team-name-row').forEach((row, i) => {
+    row.style.display = i < count ? '' : 'none';
+  });
+}
+
+function updateBaseHealthVisibility(){
+  // Base HP, regen and turret only apply to rounds + elimination modes
+  const on = BASE_HP_MODES.has(state.settings.mode);
+  ['setting-baseHealth','setting-baseRegen','setting-turret'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = on ? '' : 'none';
+  });
+}
+function updateTargetLabel(){
+  const lbl = document.getElementById('target-label');
+  const input = document.getElementById('target');
+  const val = document.getElementById('target-val');
+  const setting = document.getElementById('setting-target');
+  setting.style.display='';
+  if (state.settings.mode==='rounds'){
+    lbl.textContent='Win Target (rounds)';
+    input.min=1; input.max=15; input.step=1;
+    if (state.settings.target<1||state.settings.target>15) state.settings.target=5;
+    input.value = state.settings.target; val.textContent = state.settings.target;
+  } else if (state.settings.mode==='timed'){
+    lbl.textContent='Time Limit (seconds)';
+    input.min=30; input.max=600; input.step=15;
+    let v = Math.max(30, Math.min(600, state.settings.target*30));
+    if (!v || v<30) v=180;
+    state.settings.target = v;
+    input.value = v; val.textContent = v+'s';
+  } else if (state.settings.mode==='elimination'){
+    setting.style.display='none';
+  } else if (state.settings.mode==='gold'){
+    lbl.textContent='Gold Target (total earned)';
+    input.min=100; input.max=3000; input.step=50;
+    let v = state.settings.target<100 ? 500 : state.settings.target;
+    state.settings.target = v;
+    input.value = v; val.textContent = v+'G';
+  }
+}
+
+function applyDefaults(){
+  Object.assign(state.settings, {...DEFAULTS});
+  // reset UI
+  document.querySelectorAll('.opts').forEach(group => {
+    const key = group.dataset.key;
+    const want = String(state.settings[key]);
+    group.querySelectorAll('.opt').forEach(o=>{
+      o.classList.toggle('selected', String(o.dataset.val)===want);
+    });
+  });
+  const setSlider=(id,key,fmt)=>{
+    const el=document.getElementById(id);
+    const val=document.getElementById(id+'-val');
+    el.value = state.settings[key];
+    val.textContent = fmt(state.settings[key]);
+  };
+  setSlider('fireRate','fireRateMul',v=>(+v).toFixed(1)+'×');
+  setSlider('speed','speedMul',v=>(+v).toFixed(1)+'×');
+  setSlider('startGold','startGold',v=>v+'G');
+  setSlider('goldRate','goldRateMul',v=>(+v).toFixed(1)+'×');
+  setSlider('target','target',v=>String(v));
+  setSlider('unitCap','unitCap',v=>String(v));
+  setSlider('baseHealth','baseHealth',v=>v+' HP');
+  setSlider('baseRegenRate','baseRegenRate',v=>v+' HP/s');
+  setSlider('turretFireRateMul','turretFireRateMul',v=>(+v).toFixed(1)+'×');
+  // clear team name inputs
+  document.querySelectorAll('#team-names-inputs input[data-team-id]').forEach(inp => {
+    inp.value = '';
+  });
+  state.settings.teamNames = ['','','',''];
+  updateTargetLabel();
+  updateTeamNameRowVisibility();
+  updateBaseHealthVisibility();
+}
+
+// -------- TEAMS / SPAWNERS --------
+function buildTeams(){
+  state.teams = [];
+  const useBase = BASE_HP_MODES.has(state.settings.mode);
+  for (let i=0; i<state.settings.teamCount; i++){
+    const def = TEAM_DEFS[i];
+    const customName = (state.settings.teamNames[i]||'').trim();
+    const team = {
+      id:i, def,
+      name: customName || def.name,
+      gold: state.settings.startGold,
+      totalEarned: state.settings.startGold,
+      kills: 0,
+      wins: 0,
+      defeated: false,        // base destroyed this round (rounds) / permanent (elim)
+      eliminated: false,      // permanent elimination (elim mode only)
+      aiCooldown: rand(0.3, 1.5),
+      spawners: [],
+      base: null,
+      lastSpawn: 0,
+    };
+    if (useBase) {
+      team.base = {
+        x:0, y:0,
+        hp: state.settings.baseHealth, maxHp: state.settings.baseHealth,
+        r:28, team, isBase:true,
+        turret: { fireCooldown: rand(0, 1.0), angle: 0, lastTarget: null }
+      };
+    }
+    state.teams.push(team);
+  }
+  // hide unused HUDs
+  for (let i=0;i<4;i++){
+    const used = i<state.settings.teamCount;
+    huds[i].style.display = used ? '' : 'none';
+  }
+  layoutSpawners();
+}
+
+function layoutSpawners(){
+  const W = state.arena.w, H = state.arena.h;
+  // Base sits closer to the corner; spawners form a line/arc pushing toward arena center.
+  const baseMap = {
+    tl: { cx: W*0.13, cy: H*0.17 },
+    tr: { cx: W*0.87, cy: H*0.17 },
+    bl: { cx: W*0.13, cy: H*0.83 },
+    br: { cx: W*0.87, cy: H*0.83 }
+  };
+  const spawnCenterMap = {
+    tl: { cx: W*0.26, cy: H*0.28 },
+    tr: { cx: W*0.74, cy: H*0.28 },
+    bl: { cx: W*0.26, cy: H*0.72 },
+    br: { cx: W*0.74, cy: H*0.72 }
+  };
+  for (const t of state.teams){
+    // Base
+    if (t.base){
+      const b = baseMap[t.def.corner];
+      t.base.x = b.cx;
+      t.base.y = b.cy;
+    }
+    // Spawners in an arc facing the arena center
+    const sc = spawnCenterMap[t.def.corner];
+    const n = 3;
+    t.spawners = [];
+    for (let i=0;i<n;i++){
+      const angle = (i/n)*Math.PI*2 + (t.id*0.7);
+      const rad = Math.min(W,H)*0.055;
+      t.spawners.push({
+        x: sc.cx + Math.cos(angle)*rad,
+        y: sc.cy + Math.sin(angle)*rad,
+      });
+    }
+  }
+}
+
+// -------- UNITS --------
+function makeUnit(team, tier){
+  const sp = team.spawners[Math.floor(Math.random()*team.spawners.length)];
+  const weapon = WEAPONS[state.settings.weapon];
+  const baseSpeed = 58 * state.settings.speedMul * tier.spdMul;
+  // Role assignment
+  const hasValidEnemyBase = state.teams.some(t => t.id !== team.id && t.base && t.base.hp > 0 && !t.defeated);
+  const rusherProb = hasValidEnemyBase ? (0.22 + tier.index*0.05) : 0; // Scout 22% → Champion 42%
+  const role = Math.random() < rusherProb ? 'base_rusher' : 'unit_hunter';
+  // Rushers pick a random enemy base at spawn & commit to it (spreads targets across enemies)
+  let assignedBase = null;
+  if (role === 'base_rusher'){
+    const valid = state.teams.filter(t => t.id !== team.id && t.base && t.base.hp > 0 && !t.defeated);
+    if (valid.length) assignedBase = valid[Math.floor(Math.random()*valid.length)].base;
+  }
+  // Rushers get a 15% HP bonus — they need to survive the push
+  const hpMul = role === 'base_rusher' ? 1.15 : 1.0;
+  return {
+    x: sp.x + rand(-14,14),
+    y: sp.y + rand(-14,14),
+    vx:0, vy:0,
+    team,
+    tier,
+    hp: tier.hp * hpMul, maxHp: tier.hp * hpMul,
+    r: tier.r,
+    speed: baseSpeed,
+    weapon,
+    role,
+    assignedBase,
+    fireInterval: weapon.fireRate / state.settings.fireRateMul,
+    fireCooldown: rand(0, weapon.fireRate/2) / 1000,
+    target: null,
+    dead:false
+  };
+}
+
+function teamAliveCount(teamId){
+  let n=0;
+  for (const u of state.units) if (!u.dead && u.team.id===teamId) n++;
+  return n;
+}
+
+// -------- PROJECTILES --------
+function fireAt(u, targetX, targetY, targetRef){
+  const w = u.weapon;
+  const dx = targetX - u.x, dy = targetY - u.y;
+  const d = Math.hypot(dx,dy) || 1;
+  const shots = w.shots || 1;
+  const arc = w.spreadArc || 0;
+  const baseAng = Math.atan2(dy, dx);
+  for (let i=0;i<shots;i++){
+    const off = shots===1 ? 0 : (i/(shots-1) - 0.5)*arc;
+    const a = baseAng + off;
+    state.projectiles.push({
+      x: u.x + Math.cos(a)*(u.r+4),
+      y: u.y + Math.sin(a)*(u.r+4),
+      vx: Math.cos(a)*w.speed,
+      vy: Math.sin(a)*w.speed,
+      damage: w.damage * u.tier.dmgMul,
+      team: u.team,
+      range: w.range * u.tier.rangeMul,
+      traveled: 0,
+      color: u.team.def.core,
+      trail:[],
+      targetRef: targetRef || null,   // for _incoming count
+    });
+  }
+  // muzzle flash
+  spawnParticle(u.x + Math.cos(baseAng)*u.r, u.y + Math.sin(baseAng)*u.r, u.team.def.core, 4, 0.15);
+}
+
+function spawnParticle(x,y,color,size,life){
+  state.particles.push({ x,y,color,size,life,age:0 });
+}
+
+// -------- UPDATE --------
+function update(dt){
+  state.matchTime += dt;
+  if (!state.roundOver) state.roundTime += dt;
+  state.goldTickAcc += dt;
+
+  // Gold tick - every 2s each team gets base 2G (scaled)
+  if (state.goldTickAcc >= 2){
+    state.goldTickAcc = 0;
+    for (const t of state.teams){
+      if (t.eliminated) continue;
+      const inc = Math.round(2 * state.settings.goldRateMul);
+      t.gold += inc;
+      t.totalEarned += inc;
+    }
+  }
+
+  // AI buy
+  for (const t of state.teams){
+    if (t.eliminated || t.defeated || state.roundOver) continue;
+    t.aiCooldown -= dt;
+    if (t.aiCooldown <= 0){
+      t.aiCooldown = rand(0.6, 1.8);
+      const aliveAllies = teamAliveCount(t.id);
+      if (aliveAllies >= state.settings.unitCap) continue;
+      // Choose tier: probabilistic based on affordability + gold
+      const affordable = TIERS.filter(tt => tt.cost <= t.gold);
+      if (!affordable.length) continue;
+      const rich = t.gold > 60;
+      let tier;
+      if (rich && Math.random()<0.4){
+        tier = affordable[affordable.length-1];
+      } else {
+        // weight toward mid tier
+        const weights = affordable.map(tt => {
+          if (tt.cost<=2) return 3;
+          if (tt.cost<=10) return 5;
+          if (tt.cost<=20) return 4;
+          if (tt.cost<=40) return 2;
+          return 1;
+        });
+        const sum = weights.reduce((a,b)=>a+b,0);
+        let r = Math.random()*sum;
+        for (let i=0;i<affordable.length;i++){
+          r -= weights[i];
+          if (r<=0){ tier = affordable[i]; break; }
+        }
+        tier = tier || affordable[0];
+      }
+      t.gold -= tier.cost;
+      state.units.push(makeUnit(t, tier));
+    }
+  }
+
+  // Base regen — recover HP over time (if enabled)
+  const regenRate = state.settings.baseRegenRate;
+  if (regenRate > 0){
+    for (const t of state.teams){
+      if (!t.base || t.defeated || t.eliminated) continue;
+      if (t.base.hp > 0 && t.base.hp < t.base.maxHp){
+        t.base.hp = Math.min(t.base.maxHp, t.base.hp + regenRate * dt);
+      }
+    }
+  }
+
+  // Turrets — each alive base auto-fires at nearest enemy unit in range
+  const turretMul = state.settings.turretFireRateMul;
+  if (turretMul > 0){
+    for (const t of state.teams){
+      if (!t.base || !t.base.turret || t.defeated || t.eliminated || t.base.hp <= 0) continue;
+      const base = t.base, tur = base.turret;
+      const range = 240;
+      let target = null, bd = Infinity;
+      for (const u of state.units){
+        if (u.dead || u.team.id === t.id) continue;
+        const d = dist(u.x, u.y, base.x, base.y);
+        if (d < range && d < bd){ bd = d; target = u; }
+      }
+      if (target){
+        tur.angle = Math.atan2(target.y - base.y, target.x - base.x);
+      }
+      tur.fireCooldown -= dt;
+      if (target && tur.fireCooldown <= 0){
+        tur.fireCooldown = 1.5 / turretMul; // 1.5s at 1×
+        const a = tur.angle, speed = 480;
+        state.projectiles.push({
+          x: base.x + Math.cos(a)*(base.r+4),
+          y: base.y + Math.sin(a)*(base.r+4),
+          vx: Math.cos(a)*speed, vy: Math.sin(a)*speed,
+          damage: 14, team: t,
+          range: 280, traveled: 0,
+          color: t.def.core, trail: [],
+          fromTurret: true
+        });
+        spawnParticle(base.x + Math.cos(a)*(base.r+8), base.y + Math.sin(a)*(base.r+8), t.def.core, 5, 0.15);
+      }
+    }
+  }
+
+  // Reset per-frame incoming counters (we recompute each frame)
+  for (const u of state.units) u._incoming = 0;
+  // Tally pending shots aimed at each unit from in-flight projectiles
+  for (const p of state.projectiles){
+    if (p.dead || !p.targetRef || p.targetRef.dead) continue;
+    p.targetRef._incoming = (p.targetRef._incoming||0) + 1;
+  }
+
+  // Units: choose movement target + fire target independently (role-aware), then move and fire
+  for (const u of state.units){
+    if (u.dead) continue;
+
+    const effRange = u.weapon.range * u.tier.rangeMul;
+    let moveTarget = null, fireTarget = null;
+
+    if (u.role === 'base_rusher'){
+      // Use assigned base; reassign if destroyed/defeated. Switch to easier base if ours is fortified.
+      let base = u.assignedBase;
+      if (!base || base.hp <= 0 || base.team.defeated){
+        const valid = state.teams.filter(t => t.id !== u.team.id && t.base && t.base.hp > 0 && !t.defeated);
+        // Pick base with lowest HP (opportunistic)
+        if (valid.length){
+          valid.sort((a,b) => a.base.hp - b.base.hp);
+          base = valid[0].base;
+        } else base = null;
+        u.assignedBase = base;
+      }
+      moveTarget = base;
+      // FIRE PRIORITY: commit to base when in range; otherwise use the scorer for defense
+      if (moveTarget && dist(u.x,u.y,moveTarget.x,moveTarget.y) < effRange){
+        fireTarget = moveTarget;
+      } else {
+        fireTarget = findBestFireTarget(u, effRange);
+      }
+      if (!moveTarget){
+        // Fallback: no enemy base — behave as hunter
+        const anyUnit = findNearestEnemyUnit(u);
+        moveTarget = anyUnit;
+        if (anyUnit && dist(u.x,u.y,anyUnit.x,anyUnit.y) < effRange) fireTarget = anyUnit;
+      }
+    } else {
+      // unit_hunter: smarter about who to chase
+      // If our base is under pressure and we're far from it, rotate back to defend
+      const ourBase = u.team.base;
+      const underPressure = ourBase && teamBaseUnderPressure(u.team);
+      if (underPressure && ourBase && dist(u.x,u.y,ourBase.x,ourBase.y) > 200){
+        // Head home to defend
+        moveTarget = { x: ourBase.x, y: ourBase.y };
+        // Still engage enemies in range using the scorer
+        fireTarget = findBestFireTarget(u, effRange);
+      } else {
+        // Normal hunter: scored fire target; move toward scored-or-nearest enemy unit
+        fireTarget = findBestFireTarget(u, effRange);
+        if (fireTarget){
+          moveTarget = fireTarget;
+        } else {
+          // No enemy in range — move toward the most threatening enemy on the map (not just nearest)
+          const anyUnit = findNearestEnemyUnit(u);
+          if (anyUnit) moveTarget = anyUnit;
+          else moveTarget = findNearestEnemyBase(u);
+        }
+      }
+    }
+
+    u.target = fireTarget; // kept for HP/aim reference
+
+    // Movement
+    if (moveTarget){
+      const dx = moveTarget.x - u.x, dy = moveTarget.y - u.y;
+      const d = Math.hypot(dx,dy)||1;
+      const desired = effRange * 0.82;
+      if (d > desired){
+        u.vx = (dx/d) * u.speed;
+        u.vy = (dy/d) * u.speed;
+      } else {
+        u.vx *= 0.82; u.vy *= 0.82;
+        u.vx += (-dy/d) * u.speed * 0.1; // small lateral drift
+        u.vy += ( dx/d) * u.speed * 0.1;
+      }
+    } else {
+      // Nothing to target — drift toward arena center
+      const cx = state.arena.w/2, cy = state.arena.h/2;
+      const dx=cx-u.x, dy=cy-u.y, d=Math.hypot(dx,dy)||1;
+      u.vx += (dx/d)*u.speed*0.1;
+      u.vy += (dy/d)*u.speed*0.1;
+    }
+
+    // Firing (independent of movement)
+    if (fireTarget){
+      u.fireCooldown -= dt;
+      if (u.fireCooldown <= 0){
+        u.fireCooldown = u.fireInterval/1000;
+        fireAt(u, fireTarget.x, fireTarget.y, fireTarget);
+      }
+    }
+
+    // Separation (crude)
+    let sx=0, sy=0, sc=0;
+    for (const o of state.units){
+      if (o===u || o.dead) continue;
+      const ddx=u.x-o.x, ddy=u.y-o.y, dd=Math.hypot(ddx,ddy);
+      const minD = u.r+o.r+2;
+      if (dd>0 && dd<minD){
+        sx += (ddx/dd)*(minD-dd);
+        sy += (ddy/dd)*(minD-dd);
+        sc++;
+      }
+    }
+    if (sc){ u.vx += sx*4; u.vy += sy*4; }
+
+    // Limit speed
+    const sp = Math.hypot(u.vx, u.vy);
+    if (sp > u.speed*1.25){
+      u.vx = u.vx/sp * u.speed*1.25;
+      u.vy = u.vy/sp * u.speed*1.25;
+    }
+
+    u.x += u.vx * dt;
+    u.y += u.vy * dt;
+
+    // Clamp to arena
+    u.x = clamp(u.x, u.r+4, state.arena.w - u.r-4);
+    u.y = clamp(u.y, u.r+4, state.arena.h - u.r-4);
+  }
+
+  // Projectiles
+  for (const p of state.projectiles){
+    if (p.dead) continue;
+    const stepX = p.vx*dt, stepY = p.vy*dt;
+    p.x += stepX; p.y += stepY;
+    p.traveled += Math.hypot(stepX, stepY);
+    p.trail.push({x:p.x, y:p.y});
+    if (p.trail.length>6) p.trail.shift();
+    if (p.traveled > p.range){ p.dead = true; continue; }
+    if (p.x<0||p.y<0||p.x>state.arena.w||p.y>state.arena.h){ p.dead=true; continue; }
+    // collision — first check enemy units
+    let hit = false;
+    for (const u of state.units){
+      if (u.dead || u.team.id === p.team.id) continue;
+      if (dist(p.x,p.y,u.x,u.y) < u.r + 3){
+        u.hp -= p.damage;
+        p.dead = true; hit = true;
+        spawnParticle(p.x, p.y, u.team.def.core, 3, 0.2);
+        if (u.hp <= 0){
+          u.dead = true;
+          p.team.kills++;
+          const killReward = 2 + Math.round(u.tier.cost * 0.25);
+          p.team.gold += killReward;
+          p.team.totalEarned += killReward;
+          for (let k=0;k<6;k++){
+            state.particles.push({
+              x:u.x, y:u.y, color:u.team.def.core,
+              size:2+Math.random()*2,
+              vx:rand(-60,60), vy:rand(-60,60),
+              life:0.5, age:0
+            });
+          }
+        }
+        break;
+      }
+    }
+    if (hit) continue;
+    // then check enemy bases
+    for (const t of state.teams){
+      if (t.id === p.team.id || t.defeated || !t.base || t.base.hp<=0) continue;
+      const b = t.base;
+      if (dist(p.x,p.y,b.x,b.y) < b.r + 3){
+        b.hp -= p.damage;
+        p.dead = true;
+        spawnParticle(p.x, p.y, t.def.core, 3, 0.25);
+        if (b.hp <= 0){
+          b.hp = 0;
+          defeatTeam(t);
+        }
+        break;
+      }
+    }
+  }
+
+  // Particles
+  for (const pt of state.particles){
+    pt.age += dt;
+    if (pt.vx!==undefined){ pt.x += pt.vx*dt; pt.y += pt.vy*dt; }
+  }
+
+  // Cleanup
+  state.units = state.units.filter(u => !u.dead);
+  state.projectiles = state.projectiles.filter(p => !p.dead);
+  state.particles = state.particles.filter(p => p.age < p.life);
+
+  // End-condition checks
+  checkEndConditions(dt);
+}
+
+// Called when a team's base is destroyed — kills their units, flags defeated.
+// In elimination mode, also flags `eliminated` (permanent).
+function defeatTeam(t){
+  if (t.defeated) return;
+  t.defeated = true;
+  // Spectacular explosion at the base
+  for (let k=0;k<36;k++){
+    state.particles.push({
+      x: t.base.x + rand(-16,16),
+      y: t.base.y + rand(-16,16),
+      color: t.def.core,
+      size: 2+Math.random()*4,
+      vx: rand(-180,180), vy: rand(-180,180),
+      life: 0.9, age:0
+    });
+  }
+  // Kill all of that team's units (with particle fx)
+  for (const u of state.units){
+    if (u.dead || u.team.id !== t.id) continue;
+    u.dead = true;
+    for (let k=0;k<5;k++){
+      state.particles.push({
+        x: u.x, y: u.y, color: t.def.core,
+        size: 2+Math.random()*2,
+        vx: rand(-80,80), vy: rand(-80,80),
+        life: 0.6, age:0
+      });
+    }
+  }
+  if (state.settings.mode === 'elimination') t.eliminated = true;
+  toast(`${t.name} BASE DESTROYED`);
+}
+
+function findNearestEnemyUnit(u, maxDist){
+  let best=null, bd = (maxDist===undefined ? Infinity : maxDist);
+  for (const o of state.units){
+    if (o.dead || o.team.id === u.team.id) continue;
+    const d = dist(u.x,u.y,o.x,o.y);
+    if (d<bd){ bd=d; best=o; }
+  }
+  return best;
+}
+
+function findNearestEnemyBase(u){
+  let best=null, bd=Infinity;
+  for (const t of state.teams){
+    if (t.id === u.team.id || t.defeated || !t.base || t.base.hp<=0) continue;
+    const d = dist(u.x, u.y, t.base.x, t.base.y);
+    if (d<bd){ bd=d; best=t.base; }
+  }
+  return best;
+}
+
+// Scoring-based fire-target selection.
+// Rather than "nearest enemy wins", we score all enemy units within firing range
+// and pick the best target using multiple signals.
+//
+// Signals (higher = more attractive):
+//   +80  target can be finished in 1-2 of our shots (secure the kill)
+//   +40  target is attacking our team's base
+//   +30  target is a high-value class (Elite/Champion)
+//   +20  target is a base rusher (threat to our base)
+//   +(0..25) closer target bonus  (distance/range)
+//   -15  target already has 2+ allies shooting it (avoid ganging up)
+//   -10  target is currently fleeing/low-speed
+function scoreFireTarget(u, enemy, effRange){
+  const d = dist(u.x, u.y, enemy.x, enemy.y);
+  if (d > effRange) return -Infinity; // out of range - not a valid fire target
+  const incoming = enemy._incoming || 0;
+  const dps = u.weapon.damage * u.tier.dmgMul;
+  let s = 0;
+  // Finisher bonus: can we 1-2 shot?
+  if (enemy.hp <= dps) s += 80;
+  else if (enemy.hp <= dps*2) s += 40;
+  // Is this enemy attacking our base?
+  const ourBase = u.team.base;
+  if (ourBase){
+    const dToOurBase = dist(enemy.x, enemy.y, ourBase.x, ourBase.y);
+    if (dToOurBase < (enemy.weapon.range||200) * 1.1) s += 40;
+  }
+  // High-tier target
+  if (enemy.tier && enemy.tier.index >= 3) s += 30;
+  // Is enemy a rusher threat?
+  if (enemy.role === 'base_rusher') s += 20;
+  // Closer = slightly better
+  s += (1 - d/effRange) * 25;
+  // Ganging up penalty
+  if (incoming >= 2) s -= 15;
+  return s;
+}
+
+function findBestFireTarget(u, effRange){
+  let best = null, bestS = -Infinity;
+  for (const o of state.units){
+    if (o.dead || o.team.id === u.team.id) continue;
+    const s = scoreFireTarget(u, o, effRange);
+    if (s > bestS){ bestS = s; best = o; }
+  }
+  return best;
+}
+
+// "Is our base under attack?" — used by hunters to decide whether to rotate home
+function teamBaseUnderPressure(team){
+  if (!team.base || team.base.hp <= 0) return false;
+  const pressureRadius = 260;
+  let threats = 0;
+  for (const o of state.units){
+    if (o.dead || o.team.id === team.id) continue;
+    if (dist(o.x, o.y, team.base.x, team.base.y) < pressureRadius) threats++;
+    if (threats >= 2) return true;
+  }
+  return false;
+}
+
+// -------- END CONDITIONS --------
+function checkEndConditions(dt){
+  const mode = state.settings.mode;
+
+  // ===== ELIMINATION =====
+  // Team is eliminated the moment their base is destroyed (handled in defeatTeam).
+  // Match ends when only 1 team has base alive.
+  if (mode==='elimination'){
+    const remaining = state.teams.filter(t => !t.eliminated);
+    if (remaining.length <= 1 && !state.matchOver){
+      const winner = remaining[0] || null;
+      endMatch(winner, 'Last base standing');
+    }
+    return;
+  }
+
+  // ===== TIMED ===== (unchanged: highest kills at time)
+  if (mode==='timed'){
+    if (state.matchTime >= state.settings.target && !state.matchOver){
+      const sorted = [...state.teams].sort((a,b)=>b.kills-a.kills);
+      endMatch(sorted[0], `Time up — most kills`);
+    }
+    return;
+  }
+
+  // ===== GOLD RACE ===== (unchanged: first to target total earned)
+  if (mode==='gold'){
+    for (const t of state.teams){
+      if (t.totalEarned >= state.settings.target && !state.matchOver){
+        endMatch(t, `Reached ${state.settings.target}G earned`);
+        return;
+      }
+    }
+    return;
+  }
+
+  // ===== ROUNDS (First to N) =====
+  // Round ends when only 1 team still has base alive (defeated flag set).
+  // Winner of round = that surviving team. Next round: bases restored.
+  if (mode==='rounds'){
+    if (state.roundOver){
+      if (state.matchTime - state.roundOverAt > 2.4){
+        nextRound();
+      }
+      return;
+    }
+    if (state.roundTime < 3) return; // grace period so bases don't insta-conclude
+    const alive = state.teams.filter(t => !t.defeated);
+    if (alive.length <= 1){
+      state.roundOver = true;
+      state.roundOverAt = state.matchTime;
+      if (alive.length === 1){
+        const w = alive[0];
+        w.wins++;
+        const bonus = 20 + Math.round(state.settings.startGold*0.3);
+        w.gold += bonus;
+        w.totalEarned += bonus;
+        toast(`${w.name} wins round ${state.roundNum} (+${bonus}G)`);
+        if (w.wins >= state.settings.target){
+          endMatch(w, `First to ${state.settings.target} wins`);
+        }
+      } else {
+        toast(`Round ${state.roundNum} — draw (all bases fell)`);
+      }
+    }
+  }
+}
+
+function nextRound(){
+  state.roundNum++;
+  state.roundTime = 0;
+  state.roundOver = false;
+  state.units.length = 0;
+  state.projectiles.length = 0;
+  state.particles.length = 0;
+  // Restore all teams: bases back to full, defeated flag cleared, small gold top-up
+  for (const t of state.teams){
+    t.defeated = false;
+    if (t.base){
+      t.base.hp = t.base.maxHp;
+    }
+    t.gold += Math.round(state.settings.startGold*0.35);
+    t.totalEarned += Math.round(state.settings.startGold*0.35);
+    t.aiCooldown = rand(0.2,1.0);
+  }
+}
+
+function endMatch(winner, reason){
+  state.matchOver = true;
+  state.running = false;
+  showGameOver(winner, reason);
+}
+
+// -------- RENDER --------
+function render(){
+  const {w:W, h:H} = state.arena;
+  ctx.clearRect(0,0,W,H);
+
+  // grid
+  drawGrid(W,H);
+
+  // team quadrant tints
+  drawQuadrantTints(W,H);
+
+  // bases (draw first so spawners/units appear in front)
+  for (const t of state.teams){
+    if (t.base) drawBase(t);
+  }
+
+  // spawners
+  for (const t of state.teams){
+    for (const sp of t.spawners){
+      drawSpawner(sp, t.def);
+    }
+  }
+
+  // units
+  for (const u of state.units){
+    drawUnit(u);
+  }
+
+  // projectiles
+  for (const p of state.projectiles){
+    drawProjectile(p);
+  }
+
+  // particles
+  for (const pt of state.particles){
+    const alpha = 1 - pt.age/pt.life;
+    ctx.globalAlpha = Math.max(0, alpha);
+    ctx.fillStyle = pt.color;
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // paused overlay
+  if (state.paused){
+    ctx.fillStyle = 'rgba(0,0,0,.55)';
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = '#fff';
+    ctx.font = '700 32px -apple-system,Segoe UI,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('PAUSED', W/2, H/2);
+    ctx.font = '12px -apple-system,Segoe UI,sans-serif';
+    ctx.fillStyle = '#8a92b0';
+    ctx.fillText('Press space or click Resume', W/2, H/2+24);
+  }
+}
+
+function drawGrid(W,H){
+  ctx.save();
+  ctx.fillStyle = '#05060c';
+  ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = 'rgba(50,60,95,.25)';
+  ctx.lineWidth = 1;
+  const step = 40;
+  for (let x=0; x<=W; x+=step){
+    ctx.beginPath(); ctx.moveTo(x+0.5,0); ctx.lineTo(x+0.5,H); ctx.stroke();
+  }
+  for (let y=0; y<=H; y+=step){
+    ctx.beginPath(); ctx.moveTo(0,y+0.5); ctx.lineTo(W,y+0.5); ctx.stroke();
+  }
+  // outer border
+  ctx.strokeStyle = 'rgba(120,140,200,.18)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1,1,W-2,H-2);
+  ctx.restore();
+}
+
+function drawQuadrantTints(W,H){
+  // Subtle tinting for each active team's quadrant
+  const regions = {
+    tl:[0,0,W/2,H/2], tr:[W/2,0,W/2,H/2],
+    bl:[0,H/2,W/2,H/2], br:[W/2,H/2,W/2,H/2]
+  };
+  for (const t of state.teams){
+    const r = regions[t.def.corner];
+    const grad = ctx.createRadialGradient(
+      r[0]+r[2]*(t.def.corner.includes('l')?0.2:0.8),
+      r[1]+r[3]*(t.def.corner.includes('t')?0.2:0.8),
+      10,
+      r[0]+r[2]*(t.def.corner.includes('l')?0.2:0.8),
+      r[1]+r[3]*(t.def.corner.includes('t')?0.2:0.8),
+      Math.max(r[2],r[3])*0.8
+    );
+    const alpha = t.eliminated ? '08' : '14';
+    grad.addColorStop(0, t.def.core + alpha);
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.fillRect(...r);
+  }
+}
+
+function drawSpawner(sp, def){
+  ctx.save();
+  ctx.shadowBlur = 12;
+  ctx.shadowColor = def.core;
+  ctx.strokeStyle = def.core;
+  ctx.lineWidth = 2;
+  ctx.fillStyle = def.dark;
+  const w=22, h=28;
+  ctx.fillRect(sp.x-w/2, sp.y-h/2, w, h);
+  ctx.strokeRect(sp.x-w/2, sp.y-h/2, w, h);
+  // lines inside
+  ctx.beginPath();
+  ctx.moveTo(sp.x-w/2+3, sp.y-4); ctx.lineTo(sp.x+w/2-3, sp.y-4);
+  ctx.moveTo(sp.x-w/2+3, sp.y+4); ctx.lineTo(sp.x+w/2-3, sp.y+4);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// Trace the outer silhouette for a team's base shape — called between beginPath and fill/stroke.
+function traceBaseShape(shape, x, y, r){
+  if (shape === 'hexagon'){
+    for (let i=0;i<6;i++){
+      const a = (i/6)*Math.PI*2 - Math.PI/2;
+      const px = x + Math.cos(a)*r, py = y + Math.sin(a)*r;
+      if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+  } else if (shape === 'star'){
+    // 5-point star — outer & inner radii alternate
+    for (let i=0;i<10;i++){
+      const a = (i/10)*Math.PI*2 - Math.PI/2;
+      const rad = (i%2===0) ? r : r*0.48;
+      const px = x + Math.cos(a)*rad, py = y + Math.sin(a)*rad;
+      if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+  } else if (shape === 'octagon'){
+    for (let i=0;i<8;i++){
+      const a = (i/8)*Math.PI*2 + Math.PI/8;
+      const px = x + Math.cos(a)*r, py = y + Math.sin(a)*r;
+      if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+  } else {
+    // default: diamond
+    ctx.moveTo(x, y-r);
+    ctx.lineTo(x + r*0.9, y);
+    ctx.lineTo(x, y + r);
+    ctx.lineTo(x - r*0.9, y);
+  }
+  ctx.closePath();
+}
+
+function drawBase(team){
+  const b = team.base;
+  const def = team.def;
+  const shape = def.shape || 'diamond';
+  const dead = team.defeated || b.hp <= 0;
+  const r = b.r;
+  ctx.save();
+  if (!dead){
+    ctx.shadowBlur = 22;
+    ctx.shadowColor = def.core;
+  }
+  // Outer silhouette
+  ctx.beginPath();
+  traceBaseShape(shape, b.x, b.y, r);
+  ctx.fillStyle = dead ? '#1a1a22' : def.dark;
+  ctx.fill();
+  ctx.strokeStyle = dead ? '#3a3a42' : def.core;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  // Inner echo (same shape at ~55% size for detail)
+  ctx.beginPath();
+  traceBaseShape(shape, b.x, b.y, r*0.55);
+  ctx.strokeStyle = dead ? '#555' : def.glow;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  if (dead){
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,80,100,.7)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(b.x - r, b.y - r); ctx.lineTo(b.x + r, b.y + r);
+    ctx.moveTo(b.x + r, b.y - r); ctx.lineTo(b.x - r, b.y + r);
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+
+  // Turret on top of the base (only rendered when enabled)
+  if (b.turret && state.settings.turretFireRateMul > 0){
+    drawTurret(b, team);
+  }
+
+  // HP bar below the base
+  const barW = r*2.2, barH = 5;
+  const bx = b.x - barW/2, by = b.y + r + 8;
+  const pct = Math.max(0, b.hp / b.maxHp);
+  ctx.fillStyle = 'rgba(0,0,0,.7)';
+  ctx.fillRect(bx-1, by-1, barW+2, barH+2);
+  ctx.fillStyle = def.core;
+  ctx.fillRect(bx, by, barW*pct, barH);
+  ctx.fillStyle = def.core;
+  ctx.font = '700 10px -apple-system,Segoe UI,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.shadowBlur = 4;
+  ctx.shadowColor = def.core;
+  ctx.fillText(`${Math.ceil(b.hp)}/${b.maxHp}`, b.x, by + barH + 12);
+  ctx.shadowBlur = 0;
+}
+
+function drawTurret(base, team){
+  const def = team.def;
+  const t = base.turret;
+  ctx.save();
+  ctx.translate(base.x, base.y);
+  ctx.rotate(t.angle);
+  // Barrel
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = def.core;
+  ctx.strokeStyle = def.glow;
+  ctx.lineWidth = 3.2;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(base.r * 0.85, 0);
+  ctx.stroke();
+  // Barrel tip
+  ctx.fillStyle = def.core;
+  ctx.beginPath();
+  ctx.arc(base.r * 0.85, 0, 2.2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+  // Central mount cap
+  ctx.save();
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = def.core;
+  ctx.fillStyle = def.core;
+  ctx.beginPath();
+  ctx.arc(base.x, base.y, base.r * 0.22, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#0a0c14';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawUnit(u){
+  const def = u.team.def;
+  ctx.save();
+  // body shadow
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = def.core;
+  // body (head circle + torso line)
+  ctx.fillStyle = def.core;
+  ctx.strokeStyle = def.glow;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.arc(u.x, u.y - u.r*0.3, u.r*0.55, 0, Math.PI*2);
+  ctx.fill();
+  // body torso
+  ctx.beginPath();
+  ctx.moveTo(u.x, u.y - u.r*0.1);
+  ctx.lineTo(u.x, u.y + u.r*0.8);
+  ctx.lineWidth = u.r*0.35;
+  ctx.strokeStyle = def.core;
+  ctx.stroke();
+  ctx.restore();
+
+  // HP bar
+  const barW = u.r*2.2;
+  const pct = Math.max(0, u.hp / u.maxHp);
+  ctx.fillStyle = 'rgba(0,0,0,.6)';
+  ctx.fillRect(u.x - barW/2, u.y - u.r*1.2 - 6, barW, 3);
+  ctx.fillStyle = def.core;
+  ctx.fillRect(u.x - barW/2, u.y - u.r*1.2 - 6, barW*pct, 3);
+
+  // Tactical marker: small chevron above base rushers
+  if (u.role === 'base_rusher'){
+    ctx.save();
+    ctx.strokeStyle = def.glow;
+    ctx.lineWidth = 1.3;
+    ctx.shadowBlur = 5;
+    ctx.shadowColor = def.core;
+    const cy = u.y - u.r*1.2 - 11;
+    ctx.beginPath();
+    ctx.moveTo(u.x - 3, cy + 2);
+    ctx.lineTo(u.x,     cy - 2);
+    ctx.lineTo(u.x + 3, cy + 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawProjectile(p){
+  ctx.save();
+  // trail
+  if (p.trail.length>1){
+    ctx.strokeStyle = p.color;
+    ctx.globalAlpha = 0.4;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(p.trail[0].x, p.trail[0].y);
+    for (let i=1;i<p.trail.length;i++) ctx.lineTo(p.trail[i].x, p.trail[i].y);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = p.color;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, 2.5, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// -------- HUD --------
+function renderHuds(){
+  // Pre-match: no teams built yet — hide HUDs & blank the bar cleanly
+  if (!state.teams.length){
+    for (let i=0;i<4;i++) huds[i].style.display='none';
+    document.getElementById('mode-label').textContent = MODE_LABEL[state.settings.mode] || '—';
+    document.getElementById('time-label').textContent = '0:00';
+    document.getElementById('round-label').textContent = '—';
+    document.getElementById('progress').style.width = '0%';
+    document.getElementById('progress-label').textContent = 'AWAITING START';
+    return;
+  }
+  for (let i=0; i<4; i++){
+    const hud = huds[i];
+    if (i >= state.teams.length){ hud.style.display='none'; continue; }
+    const t = state.teams[i];
+    hud.style.display='';
+    // Grey out if permanently eliminated (elim mode) OR currently defeated this round (rounds mode)
+    const greyed = t.eliminated || t.defeated;
+    hud.classList.toggle('eliminated', t.eliminated);
+    hud.classList.toggle('defeated', !t.eliminated && t.defeated);
+    const target = state.settings.mode==='rounds' ? state.settings.target : '—';
+    // Base HP bar (only when mode uses bases)
+    let baseBarHtml = '';
+    if (t.base){
+      const pct = Math.max(0, Math.round((t.base.hp / t.base.maxHp) * 100));
+      baseBarHtml = `
+        <div class="hud-base">
+          <div class="hud-base-label">★ BASE <span>${Math.ceil(t.base.hp)}/${t.base.maxHp}</span></div>
+          <div class="hud-base-bar"><div class="hud-base-fill" style="width:${pct}%"></div></div>
+        </div>`;
+    }
+    hud.innerHTML = `
+      <div class="hud-head">
+        <div class="hud-name">★ ${t.name}</div>
+        <div class="hud-wins">WINS <b>${t.wins}</b>${state.settings.mode==='rounds'?'/'+target:''}</div>
+      </div>
+      ${baseBarHtml}
+      <div class="hud-stats">
+        <div class="hud-gold">${t.gold}G</div>
+        <div class="hud-kills">Kills <b>${t.kills}</b><br/>Earned <b>${t.totalEarned}G</b></div>
+      </div>
+      <div class="hud-shop">
+        ${TIERS.map(tt => `
+          <div class="hud-tier"><span class="tn">${tt.tag}</span><b>${tt.cost}G</b></div>
+        `).join('')}
+      </div>
+    `;
+  }
+  // top bar
+  document.getElementById('mode-label').textContent = MODE_LABEL[state.settings.mode];
+  document.getElementById('time-label').textContent = fmtTime(state.matchTime);
+  document.getElementById('round-label').textContent = state.settings.mode==='rounds' ? state.roundNum : '—';
+  // progress bar
+  const prog = document.getElementById('progress');
+  const label = document.getElementById('progress-label');
+  let pct = 0, text = '';
+  if (state.settings.mode==='rounds'){
+    const leader = state.teams.reduce((a,b)=>b.wins>a.wins?b:a, state.teams[0]);
+    pct = Math.min(100, (leader.wins/state.settings.target)*100);
+    text = `${leader.name} — ${leader.wins}/${state.settings.target} WINS`;
+  } else if (state.settings.mode==='timed'){
+    pct = Math.min(100, (state.matchTime/state.settings.target)*100);
+    text = `TIME ${fmtTime(state.matchTime)} / ${fmtTime(state.settings.target)}`;
+  } else if (state.settings.mode==='gold'){
+    const leader = state.teams.reduce((a,b)=>b.totalEarned>a.totalEarned?b:a, state.teams[0]);
+    pct = Math.min(100, (leader.totalEarned/state.settings.target)*100);
+    text = `${leader.name} — ${leader.totalEarned}G / ${state.settings.target}G`;
+  } else if (state.settings.mode==='elimination'){
+    const alive = state.teams.filter(t=>!t.eliminated).length;
+    pct = ((state.teams.length - alive) / Math.max(1, state.teams.length-1)) * 100;
+    text = `TEAMS REMAINING — ${alive}/${state.teams.length}`;
+  }
+  prog.style.width = pct+'%';
+  label.textContent = text;
+}
+
+const MODE_LABEL = {
+  rounds:'First to N', timed:'Timed', elimination:'Elimination', gold:'Gold Race'
+};
+function fmtTime(s){
+  s = Math.max(0, Math.floor(s));
+  const m = Math.floor(s/60), r = s%60;
+  return m+':'+(r<10?'0':'')+r;
+}
+
+// -------- GAME OVER UI --------
+function showGameOver(winner, reason){
+  const modal = document.getElementById('gameover-modal');
+  const banner = document.getElementById('winner-banner');
+  const rsn = document.getElementById('winner-reason');
+  const st = document.getElementById('standings');
+  if (winner){
+    banner.textContent = winner.name + ' WINS';
+    banner.style.color = winner.def.core;
+    banner.style.textShadow = '0 0 20px '+winner.def.core;
+  } else {
+    banner.textContent = 'DRAW';
+    banner.style.color = '#fff';
+    banner.style.textShadow = '0 0 12px #fff';
+  }
+  rsn.textContent = reason || '';
+  // standings
+  const sorted = [...state.teams].sort((a,b)=>{
+    if (state.settings.mode==='rounds') return b.wins-a.wins;
+    if (state.settings.mode==='gold') return b.totalEarned-a.totalEarned;
+    if (state.settings.mode==='timed') return b.kills-a.kills;
+    // elimination: non-eliminated first, then by kills
+    if (a.eliminated !== b.eliminated) return a.eliminated?1:-1;
+    return b.kills-a.kills;
+  });
+  st.innerHTML = sorted.map((t,idx)=>`
+    <div class="standing" style="border-color:${t.def.core}40">
+      <div class="pos">#${idx+1}</div>
+      <div class="nm" style="color:${t.def.core}">★ ${t.name}</div>
+      <div class="wins">Wins <b>${t.wins}</b> · Kills <b>${t.kills}</b></div>
+      <div class="kills">Earned <b>${t.totalEarned}G</b></div>
+    </div>
+  `).join('');
+  modal.style.display='flex';
+}
+
+// -------- INIT / CONTROL --------
+function startMatch(){
+  document.getElementById('settings-modal').style.display='none';
+  document.getElementById('gameover-modal').style.display='none';
+  state.units.length=0;
+  state.projectiles.length=0;
+  state.particles.length=0;
+  state.matchTime=0;
+  state.roundTime=0;
+  state.goldTickAcc=0;
+  state.roundNum=1;
+  state.roundOver=false;
+  state.matchOver=false;
+  state.paused=false;
+  buildTeams();
+  state.running = true;
+  toast('Battle begins!');
+  updatePauseBtn();
+}
+
+function resetMatch(){ startMatch(); }
+
+function togglePause(){
+  if (!state.running) return;
+  state.paused = !state.paused;
+  updatePauseBtn();
+}
+function updatePauseBtn(){
+  const btn = document.getElementById('btn-pause');
+  btn.textContent = state.paused ? '▶ Resume' : '❚❚ Pause';
+  btn.classList.toggle('active', state.paused);
+}
+
+// -------- GAME LOOP --------
+function loop(now){
+  if (!state.lastFrame) state.lastFrame = now;
+  let dt = (now - state.lastFrame)/1000;
+  state.lastFrame = now;
+  dt = Math.min(dt, 0.05); // cap
+  if (state.running && !state.paused && !state.matchOver){
+    update(dt);
+  }
+  render();
+  renderHuds();
+  requestAnimationFrame(loop);
+}
+
+// -------- EVENT WIRING --------
+document.getElementById('btn-settings').addEventListener('click', ()=>{
+  state.paused = true; updatePauseBtn();
+  state.pendingStructural = false; // fresh slate
+  // Only show Close button if there's a match to return to
+  document.getElementById('btn-close-settings').style.display = state.running ? '' : 'none';
+  document.getElementById('settings-modal').style.display='flex';
+  updateLiveHint();
+});
+document.getElementById('btn-close-settings').addEventListener('click', ()=>{
+  if (state.pendingStructural){
+    if (!confirm('You changed structural settings (team count, start gold, mode, base HP, or team names).\n\nThese changes will NOT take effect until you reset.\n\nClose without applying?')) return;
+  }
+  document.getElementById('settings-modal').style.display='none';
+  state.paused = false; updatePauseBtn();
+  state.pendingStructural = false;
+});
+document.getElementById('btn-pause').addEventListener('click', togglePause);
+document.getElementById('btn-reset').addEventListener('click', ()=>{
+  if (confirm('Reset the current match?')) resetMatch();
+});
+// Smart start/reset:
+//  - not running: start a new match
+//  - running + pending structural: reset & apply
+//  - running + only live changes: just close settings (changes already applied)
+document.getElementById('btn-start').addEventListener('click', ()=>{
+  if (!state.running){
+    startMatch();
+  } else if (state.pendingStructural){
+    startMatch();  // reset & restart with new settings
+  } else {
+    // Live changes only — just close the modal and resume
+    document.getElementById('settings-modal').style.display='none';
+    state.paused = false; updatePauseBtn();
+  }
+});
+document.getElementById('btn-defaults').addEventListener('click', applyDefaults);
+document.getElementById('legend-toggle').addEventListener('click', ()=>{
+  document.getElementById('unit-legend').classList.toggle('collapsed');
+});
+document.getElementById('btn-replay').addEventListener('click', ()=>{
+  document.getElementById('gameover-modal').style.display='none';
+  resetMatch();
+});
+document.getElementById('btn-newsetup').addEventListener('click', ()=>{
+  document.getElementById('gameover-modal').style.display='none';
+  document.getElementById('settings-modal').style.display='flex';
+});
+window.addEventListener('keydown', e=>{
+  if (e.code==='Space'){ e.preventDefault(); togglePause(); }
+  else if (e.key==='r' || e.key==='R'){ resetMatch(); }
+  else if (e.key==='Escape'){
+    const sm = document.getElementById('settings-modal');
+    if (sm.style.display==='flex' && state.running){
+      sm.style.display='none';
+      state.paused = false; updatePauseBtn();
+    }
+  }
+});
+
+// -------- BOOT --------
+bindSettings();
+applyDefaults();
+resize();
+requestAnimationFrame(loop);
+// Keep settings modal open on first load
+</script>
+</body>
+</html>
