@@ -45,9 +45,9 @@
   #unit-legend{
     position:absolute;top:12px;left:50%;transform:translateX(-50%);
     z-index:4;pointer-events:auto;
-    background:rgba(6,8,16,.85);border:1px solid rgba(255,255,255,.15);
+    background:rgba(6,8,16,.88);border:1px solid rgba(255,255,255,.18);
     border-radius:8px;backdrop-filter:blur(4px);
-    box-shadow:0 2px 16px rgba(0,0,0,.5);
+    box-shadow:0 2px 16px rgba(0,0,0,.6);
     display:flex;align-items:flex-start;
     transition:all .18s ease
   }
@@ -121,7 +121,40 @@
   #progress-label{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:2px;color:var(--muted)}
 
   /* Settings modal */
-  #settings-modal,#gameover-modal{position:fixed;inset:0;background:rgba(3,4,10,.88);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(6px)}
+  #settings-modal,#gameover-modal,#history-modal{position:fixed;inset:0;background:rgba(3,4,10,.88);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(6px)}
+  #history-modal{display:none}
+
+  /* History tabs */
+  .history-tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid #1a1f30}
+  .tab-btn{background:none;border:none;color:var(--muted);padding:8px 14px;font-size:11px;letter-spacing:1.5px;cursor:pointer;font-family:inherit;text-transform:uppercase;border-bottom:2px solid transparent;font-weight:600}
+  .tab-btn.active{color:#fff;border-color:#ff2bd6}
+  .tab-pane{display:none;max-height:50vh;overflow-y:auto}
+  .tab-pane.active{display:block}
+  .lb-row{display:grid;grid-template-columns:30px 1fr auto auto auto;gap:12px;align-items:center;padding:9px 12px;background:rgba(255,255,255,.03);border-left:3px solid;border-radius:4px;margin-bottom:5px;font-size:12px}
+  .lb-row .pos{font-weight:700;color:var(--muted);font-size:13px}
+  .lb-row .lb-name{font-weight:700;letter-spacing:1px}
+  .lb-row .lb-stat{color:var(--muted);font-size:10px;line-height:1.3;text-align:right}
+  .lb-row .lb-stat b{color:#fff;font-size:13px;display:block}
+  .empty-state{padding:20px;text-align:center;color:var(--muted);font-size:12px}
+  .match-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:4px;margin-bottom:4px;font-size:11px;align-items:center}
+  .match-row .mr-winner{font-weight:700;letter-spacing:1px}
+  .match-row .mr-mode{color:var(--muted);font-size:10px}
+  .match-row .mr-time{color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums}
+
+  /* Custom team color picker */
+  .team-name-row input[type="color"]{
+    width:24px;height:24px;border:1px solid rgba(255,255,255,.15);border-radius:4px;
+    background:transparent;cursor:pointer;padding:0;flex-shrink:0
+  }
+  .team-name-row input[type="color"]::-webkit-color-swatch{border:none;border-radius:3px}
+  .team-name-row input[type="color"]::-moz-color-swatch{border:none;border-radius:3px}
+
+  /* Per-team difficulty row */
+  .diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .diff-row{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:5px 8px}
+  .diff-row .diff-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .diff-row .diff-name{font-size:11px;letter-spacing:1px;min-width:50px}
+  .diff-row select{flex:1;background:#10141f;border:1px solid #2a3350;color:var(--ink);padding:5px 6px;border-radius:4px;font-size:11px;font-family:inherit;cursor:pointer}
   .modal-inner{background:#0a0c14;border:1px solid #2a3350;border-radius:12px;padding:28px;max-width:640px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 10px 60px rgba(255,43,214,.15)}
   .modal-inner h2{margin:0 0 6px 0;font-size:22px;letter-spacing:3px;font-weight:600}
   .modal-inner h2 span{color:#ff2bd6;text-shadow:0 0 12px #ff2bd6}
@@ -163,7 +196,7 @@
   .standing .wins,.standing .kills{font-size:11px;color:var(--muted)}
 
   /* Toast */
-  #toast{position:fixed;top:72px;left:50%;transform:translateX(-50%);background:rgba(10,12,20,.95);border:1px solid #ff2bd6;color:#fff;padding:10px 18px;border-radius:6px;font-size:12px;letter-spacing:1px;z-index:200;pointer-events:none;opacity:0;transition:opacity .3s;box-shadow:0 0 20px rgba(255,43,214,.4)}
+  #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(10,12,20,.95);border:1px solid #ff2bd6;color:#fff;padding:10px 18px;border-radius:6px;font-size:12px;letter-spacing:1px;z-index:200;pointer-events:none;opacity:0;transition:opacity .3s;box-shadow:0 0 20px rgba(255,43,214,.4)}
   #toast.show{opacity:1}
 
   @media (max-width:900px){
@@ -267,6 +300,8 @@
     <span class="status" id="mode-status">Mode: <b id="mode-label">—</b></span>
     <span class="status" id="time-status">Time: <b id="time-label">0:00</b></span>
     <span class="status" id="round-status">Round: <b id="round-label">1</b></span>
+    <button class="btn" id="btn-mute" title="Mute sound">🔊</button>
+    <button class="btn" id="btn-history" title="Match history">📊</button>
     <button class="btn" id="btn-settings">⚙ Settings</button>
     <button class="btn primary" id="btn-pause">❚❚ Pause</button>
     <button class="btn danger" id="btn-reset">↻ Reset</button>
@@ -285,11 +320,11 @@
         <button id="legend-toggle" type="button" title="Toggle legend">?</button>
         <div id="legend-content">
           <div class="legend-title">UNIT GUIDE</div>
-          <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><circle cx="10" cy="7" r="3.4" fill="#bbb"/><rect x="8.7" y="9" width="2.6" height="7" fill="#bbb"/></svg><span class="lg-name">Scout</span><span class="lg-cost">2G</span></div>
-          <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><circle cx="10" cy="7" r="4" fill="#bbb"/><rect x="8.4" y="9" width="3.2" height="8" fill="#bbb"/></svg><span class="lg-name">Soldier</span><span class="lg-cost">10G</span></div>
-          <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><circle cx="10" cy="7" r="4.4" fill="#bbb"/><rect x="8.1" y="9" width="3.8" height="9" fill="#bbb"/></svg><span class="lg-name">Heavy</span><span class="lg-cost">20G</span></div>
-          <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><circle cx="10" cy="6.5" r="4.8" fill="#bbb"/><rect x="7.7" y="9" width="4.6" height="9.5" fill="#bbb"/></svg><span class="lg-name">Elite</span><span class="lg-cost">40G</span></div>
-          <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><circle cx="10" cy="6" r="5.3" fill="#bbb"/><rect x="7.2" y="9" width="5.6" height="10" fill="#bbb"/></svg><span class="lg-name">Champion</span><span class="lg-cost">80G</span></div>
+          <div class="legend-row"><svg viewBox="0 0 20 22" class="lg-svg"><circle cx="10" cy="7" r="2.6" fill="#bbb"/><line x1="10" y1="9.5" x2="10" y2="17" stroke="#bbb" stroke-width="2"/></svg><span class="lg-name"><b>S</b> &middot; Scout</span><span class="lg-cost">2G</span></div>
+          <div class="legend-row"><svg viewBox="0 0 20 22" class="lg-svg"><circle cx="10" cy="7" r="3.2" fill="#bbb"/><line x1="10" y1="9.5" x2="10" y2="18" stroke="#bbb" stroke-width="3"/></svg><span class="lg-name"><b>Sol</b> &middot; Soldier</span><span class="lg-cost">10G</span></div>
+          <div class="legend-row"><svg viewBox="0 0 20 22" class="lg-svg"><circle cx="10" cy="7" r="3.6" fill="#bbb"/><line x1="10" y1="10" x2="10" y2="18" stroke="#bbb" stroke-width="4.2"/><circle cx="6.5" cy="10.5" r="1.5" fill="#bbb"/><circle cx="13.5" cy="10.5" r="1.5" fill="#bbb"/></svg><span class="lg-name"><b>H</b> &middot; Heavy</span><span class="lg-cost">20G</span></div>
+          <div class="legend-row"><svg viewBox="0 0 20 22" class="lg-svg"><circle cx="10" cy="7" r="3.6" fill="#bbb"/><polygon points="7.5,4.5 8.5,2.8 10,4 11.5,2.8 12.5,4.5" fill="#bbb"/><line x1="10" y1="10" x2="10" y2="19" stroke="#bbb" stroke-width="4"/><line x1="10" y1="11.5" x2="10" y2="16.5" stroke="#222" stroke-width="0.7"/></svg><span class="lg-name"><b>E</b> &middot; Elite</span><span class="lg-cost">40G</span></div>
+          <div class="legend-row"><svg viewBox="0 0 20 22" class="lg-svg"><circle cx="10" cy="11" r="9" stroke="#bbb" stroke-width="0.5" fill="none" opacity="0.4"/><polygon points="10,3 13.5,5 13.5,9 10,11 6.5,9 6.5,5" fill="#bbb"/><polygon points="8,3 10,1 12,3" fill="#bbb"/><line x1="10" y1="10" x2="10" y2="19.5" stroke="#bbb" stroke-width="5"/><circle cx="5.5" cy="11" r="1.8" fill="#bbb"/><circle cx="14.5" cy="11" r="1.8" fill="#bbb"/></svg><span class="lg-name"><b>C★</b> &middot; Champion</span><span class="lg-cost">80G</span></div>
           <div class="legend-divider"></div>
           <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><polyline points="6,9 10,5 14,9" stroke="#bbb" stroke-width="1.5" fill="none"/><circle cx="10" cy="13" r="3" fill="#bbb"/></svg><span class="lg-name">▲ Rusher</span><span class="lg-cost">→ base</span></div>
           <div class="legend-row"><svg viewBox="0 0 20 20" class="lg-svg"><polygon points="10,2 17,10 10,18 3,10" stroke="#bbb" stroke-width="1.5" fill="none"/></svg><span class="lg-name">Base</span><span class="lg-cost">HQ</span></div>
@@ -340,24 +375,76 @@
       </div>
 
       <div class="setting" data-live="0" style="grid-column:1 / -1">
-        <label>Team Names <span style="color:var(--muted);text-transform:none;font-size:10px;letter-spacing:0;font-weight:400">— optional, leave blank for defaults</span></label>
+        <label>Team Names &amp; Colors <span style="color:var(--muted);text-transform:none;font-size:10px;letter-spacing:0;font-weight:400">— click the dot to recolor</span></label>
         <div class="team-names" id="team-names-inputs">
           <div class="team-name-row" data-team-row="0">
-            <span class="team-name-dot" style="background:var(--t0-core);box-shadow:0 0 8px var(--t0-core)"></span>
+            <input type="color" data-color-id="0" value="#39ff14" title="Team 1 color" />
             <input type="text" maxlength="14" placeholder="LIME" data-team-id="0" />
           </div>
           <div class="team-name-row" data-team-row="1">
-            <span class="team-name-dot" style="background:var(--t1-core);box-shadow:0 0 8px var(--t1-core)"></span>
+            <input type="color" data-color-id="1" value="#ff2bd6" title="Team 2 color" />
             <input type="text" maxlength="14" placeholder="MAGENTA" data-team-id="1" />
           </div>
           <div class="team-name-row" data-team-row="2">
-            <span class="team-name-dot" style="background:var(--t2-core);box-shadow:0 0 8px var(--t2-core)"></span>
+            <input type="color" data-color-id="2" value="#ffea00" title="Team 3 color" />
             <input type="text" maxlength="14" placeholder="YELLOW" data-team-id="2" />
           </div>
           <div class="team-name-row" data-team-row="3">
-            <span class="team-name-dot" style="background:var(--t3-core);box-shadow:0 0 8px var(--t3-core)"></span>
+            <input type="color" data-color-id="3" value="#00e7ff" title="Team 4 color" />
             <input type="text" maxlength="14" placeholder="CYAN" data-team-id="3" />
           </div>
+        </div>
+      </div>
+
+      <div class="setting" data-live="0" style="grid-column:1 / -1">
+        <label>AI Difficulty <span style="color:var(--muted);text-transform:none;font-size:10px;letter-spacing:0;font-weight:400">— per team</span></label>
+        <div class="diff-grid" id="diff-inputs">
+          <div class="diff-row" data-diff-row="0">
+            <span class="diff-dot" style="background:var(--t0-core)"></span>
+            <span class="diff-name">Team 1</span>
+            <select data-diff-id="0"><option value="0">Easy</option><option value="1" selected>Normal</option><option value="2">Hard</option><option value="3">Brutal</option></select>
+          </div>
+          <div class="diff-row" data-diff-row="1">
+            <span class="diff-dot" style="background:var(--t1-core)"></span>
+            <span class="diff-name">Team 2</span>
+            <select data-diff-id="1"><option value="0">Easy</option><option value="1" selected>Normal</option><option value="2">Hard</option><option value="3">Brutal</option></select>
+          </div>
+          <div class="diff-row" data-diff-row="2">
+            <span class="diff-dot" style="background:var(--t2-core)"></span>
+            <span class="diff-name">Team 3</span>
+            <select data-diff-id="2"><option value="0">Easy</option><option value="1" selected>Normal</option><option value="2">Hard</option><option value="3">Brutal</option></select>
+          </div>
+          <div class="diff-row" data-diff-row="3">
+            <span class="diff-dot" style="background:var(--t3-core)"></span>
+            <span class="diff-name">Team 4</span>
+            <select data-diff-id="3"><option value="0">Easy</option><option value="1" selected>Normal</option><option value="2">Hard</option><option value="3">Brutal</option></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting" data-live="0">
+        <label>Arena Shape</label>
+        <div class="opts" data-key="arenaShape">
+          <div class="opt selected" data-val="rect">Rectangle</div>
+          <div class="opt" data-val="circle">Circle</div>
+          <div class="opt" data-val="cross">Cross</div>
+        </div>
+      </div>
+
+      <div class="setting" data-live="0">
+        <label>Obstacles</label>
+        <div class="opts" data-key="obstacles">
+          <div class="opt selected" data-val="none">None</div>
+          <div class="opt" data-val="few">Few</div>
+          <div class="opt" data-val="many">Many</div>
+        </div>
+      </div>
+
+      <div class="setting" data-live="1">
+        <label>Power-ups</label>
+        <div class="opts" data-key="powerupsEnabled">
+          <div class="opt selected" data-val="false">Off</div>
+          <div class="opt" data-val="true">On</div>
         </div>
       </div>
 
@@ -467,6 +554,28 @@
   </div>
 </div>
 
+<!-- History Modal -->
+<div id="history-modal">
+  <div class="modal-inner">
+    <h2>MATCH <span>HISTORY</span></h2>
+    <div class="sub">Local data only — saved in this browser, not synced.</div>
+    <div class="history-tabs">
+      <button class="tab-btn active" data-tab="leaderboard">Leaderboard</button>
+      <button class="tab-btn" data-tab="matches">Recent Matches</button>
+    </div>
+    <div id="tab-leaderboard" class="tab-pane active">
+      <div id="leaderboard-list"></div>
+    </div>
+    <div id="tab-matches" class="tab-pane">
+      <div id="matches-list"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" id="btn-clear-history">🗑 Clear All</button>
+      <button class="btn primary" id="btn-close-history">× Close</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -488,11 +597,11 @@ const WEAPONS = {
 
 // tier scaling: cost -> hp/power
 const TIERS = [
-  { index:0, cost:2,  hp:22,  spdMul:1.10, dmgMul:0.90, rangeMul:1.00, r:7.5,  tag:'Scout'    },
-  { index:1, cost:10, hp:55,  spdMul:1.00, dmgMul:1.00, rangeMul:1.00, r:8.5,  tag:'Soldier'  },
-  { index:2, cost:20, hp:110, spdMul:0.92, dmgMul:1.15, rangeMul:1.05, r:9.5,  tag:'Heavy'    },
-  { index:3, cost:40, hp:210, spdMul:0.84, dmgMul:1.35, rangeMul:1.10, r:10.5, tag:'Elite'    },
-  { index:4, cost:80, hp:420, spdMul:0.78, dmgMul:1.65, rangeMul:1.15, r:12,   tag:'Champion' }
+  { index:0, cost:2,  hp:22,  spdMul:1.10, dmgMul:0.90, rangeMul:1.00, r:9.5,  tag:'Scout',    letter:'S' },
+  { index:1, cost:10, hp:55,  spdMul:1.00, dmgMul:1.00, rangeMul:1.00, r:11,   tag:'Soldier',  letter:'Sol' },
+  { index:2, cost:20, hp:110, spdMul:0.92, dmgMul:1.15, rangeMul:1.05, r:12.5, tag:'Heavy',    letter:'H' },
+  { index:3, cost:40, hp:210, spdMul:0.84, dmgMul:1.35, rangeMul:1.10, r:14,   tag:'Elite',    letter:'E' },
+  { index:4, cost:80, hp:420, spdMul:0.78, dmgMul:1.65, rangeMul:1.15, r:16,   tag:'Champion', letter:'C' }
 ];
 
 const TEAM_DEFS = [
@@ -506,7 +615,14 @@ const DEFAULTS = {
   teamCount:4, weapon:'standard', fireRateMul:1, speedMul:1,
   startGold:30, goldRateMul:1, mode:'rounds', target:5, unitCap:30,
   baseHealth:300, baseRegenRate:0, turretFireRateMul:1,
-  teamNames: ['','','','']   // empty string = use default team name
+  teamNames: ['','','',''],
+  // 0=easy, 1=normal, 2=hard, 3=brutal — affects buy speed & buy quality
+  aiDifficulty: [1,1,1,1],
+  // null = use default neon palette
+  teamColors: [null,null,null,null],
+  arenaShape: 'rect',     // 'rect' | 'circle' | 'cross'
+  obstacles: 'none',      // 'none' | 'few' | 'many'
+  powerupsEnabled: false  // off by default; opt-in
 };
 
 // Modes that use the "base health" mechanic:
@@ -519,6 +635,10 @@ const state = {
   units: [],
   projectiles: [],
   particles: [],
+  spawnLabels: [],
+  powerups: [],
+  obstacles: [],
+  powerupSpawnAcc: 0,
   goldPickups: [],
   arena: { x:0, y:0, w:0, h:0, pad:260 }, // pad reserved for corner HUD panels
   running:false,
@@ -544,6 +664,192 @@ const huds = [0,1,2,3].map(i => document.getElementById('hud-'+i));
 const rand = (a,b)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(ax,ay,bx,by)=>Math.hypot(ax-bx,ay-by);
+
+// -------- SOUND SYSTEM --------
+// Synthesised tones via Web Audio API — no asset files needed.
+const Audio = {
+  ctx: null,
+  master: null,
+  enabled: true,
+  lastShot: 0,    // throttle counter
+  init(){
+    if (this.ctx) return;
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx){ this.enabled = false; return; }
+      this.ctx = new Ctx();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.35;
+      this.master.connect(this.ctx.destination);
+    } catch(e){ this.enabled = false; }
+  },
+  // Resume context after a user gesture (browsers require this)
+  resume(){
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  setMuted(muted){
+    this.enabled = !muted;
+    if (this.master) this.master.gain.value = muted ? 0 : 0.35;
+  },
+  // Generic envelope: freq, type, duration, attack/release
+  tone(freq, type, dur, vol=0.5, attack=0.005, release=null){
+    if (!this.enabled || !this.ctx) return;
+    const t = this.ctx.currentTime;
+    release = release || dur*0.8;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(vol, t+attack);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    osc.connect(gain);
+    gain.connect(this.master);
+    osc.start(t);
+    osc.stop(t+dur+0.05);
+  },
+  // Frequency sweep (zap/pew)
+  sweep(f1, f2, type, dur, vol=0.3){
+    if (!this.enabled || !this.ctx) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(f1, t);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(20,f2), t+dur);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(vol, t+0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    osc.connect(gain);
+    gain.connect(this.master);
+    osc.start(t);
+    osc.stop(t+dur+0.05);
+  },
+  // Filtered noise burst (explosion)
+  noise(dur, vol=0.4, lowpass=800){
+    if (!this.enabled || !this.ctx) return;
+    const t = this.ctx.currentTime;
+    const buf = this.ctx.createBuffer(1, this.ctx.sampleRate*dur, this.ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i=0; i<data.length; i++) data[i] = (Math.random()*2-1) * (1 - i/data.length);
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(lowpass, t);
+    filter.frequency.exponentialRampToValueAtTime(80, t+dur);
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.master);
+    src.start(t);
+  },
+  // ====== Game-specific sounds ======
+  shot(){
+    // Throttle: max ~12 shot sounds per second
+    const now = performance.now();
+    if (now - this.lastShot < 80) return;
+    this.lastShot = now;
+    this.sweep(rand(800,1100), rand(280,400), 'sawtooth', 0.06, 0.10);
+  },
+  hit(){
+    this.tone(rand(180,260), 'square', 0.05, 0.15);
+  },
+  unitDeath(){
+    this.sweep(rand(400,500), 80, 'triangle', 0.18, 0.18);
+  },
+  baseDestroyed(){
+    // Big boom: noise + low-freq sweep
+    this.noise(0.7, 0.55, 1500);
+    this.sweep(180, 40, 'sine', 0.6, 0.4);
+    this.sweep(420, 120, 'sawtooth', 0.4, 0.25);
+  },
+  roundWin(){
+    // Triumphant 3-note rise
+    setTimeout(()=>this.tone(523, 'square', 0.12, 0.30), 0);   // C
+    setTimeout(()=>this.tone(659, 'square', 0.12, 0.30), 120); // E
+    setTimeout(()=>this.tone(784, 'square', 0.30, 0.32), 240); // G
+  },
+  matchWin(){
+    // Bigger fanfare
+    setTimeout(()=>this.tone(523,'square',0.1,0.30),0);
+    setTimeout(()=>this.tone(659,'square',0.1,0.30),100);
+    setTimeout(()=>this.tone(784,'square',0.1,0.30),200);
+    setTimeout(()=>this.tone(1047,'square',0.5,0.35),300);
+    setTimeout(()=>this.tone(784,'sine',0.5,0.20),320);
+  },
+  powerup(){
+    this.sweep(400, 1200, 'sine', 0.25, 0.30);
+    setTimeout(()=>this.tone(1500, 'sine', 0.15, 0.20), 80);
+  },
+  ui(){ this.tone(880, 'sine', 0.04, 0.12); }
+};
+
+// -------- MATCH HISTORY (localStorage) --------
+const History = {
+  KEY_MATCHES: 'etyk_matches',
+  KEY_LEADER: 'etyk_leaderboard',
+  MAX_MATCHES: 50,
+  load(key, fallback){
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : fallback;
+    } catch(e){ return fallback; }
+  },
+  save(key, val){
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){}
+  },
+  recordMatch(winner, reason){
+    const matches = this.load(this.KEY_MATCHES, []);
+    const m = {
+      ts: Date.now(),
+      mode: state.settings.mode,
+      duration: Math.round(state.matchTime),
+      winner: winner ? winner.name : 'DRAW',
+      winnerColor: winner ? winner.def.core : '#888',
+      reason,
+      teams: state.teams.map(t => ({
+        name: t.name,
+        wins: t.wins,
+        kills: t.kills,
+        earned: t.totalEarned,
+        eliminated: t.eliminated
+      }))
+    };
+    matches.unshift(m);
+    if (matches.length > this.MAX_MATCHES) matches.length = this.MAX_MATCHES;
+    this.save(this.KEY_MATCHES, matches);
+    // Update leaderboard (cumulative wins per team name)
+    const leader = this.load(this.KEY_LEADER, {});
+    if (winner){
+      const k = winner.name;
+      if (!leader[k]) leader[k] = { name:k, wins:0, kills:0, matches:0, color: winner.def.core };
+      leader[k].wins++;
+      leader[k].kills += winner.kills;
+      leader[k].matches++;
+      leader[k].color = winner.def.core;
+    }
+    // Even non-winners contribute kills to their leaderboard entry
+    for (const t of state.teams){
+      if (winner && t.name === winner.name) continue;
+      if (!leader[t.name]) leader[t.name] = { name:t.name, wins:0, kills:0, matches:0, color: t.def.core };
+      leader[t.name].kills += t.kills;
+      leader[t.name].matches++;
+      leader[t.name].color = t.def.core;
+    }
+    this.save(this.KEY_LEADER, leader);
+  },
+  getMatches(){ return this.load(this.KEY_MATCHES, []); },
+  getLeaderboard(){
+    const lb = this.load(this.KEY_LEADER, {});
+    return Object.values(lb).sort((a,b) => b.wins - a.wins || b.kills - a.kills);
+  },
+  clear(){
+    try { localStorage.removeItem(this.KEY_MATCHES); localStorage.removeItem(this.KEY_LEADER); } catch(e){}
+  }
+};
 function toast(msg, ms=1800){
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -576,11 +882,13 @@ window.addEventListener('orientationchange', () => setTimeout(resize, 120));
 // Settings that can be changed mid-match without restarting
 const LIVE_KEYS = new Set([
   'weapon', 'fireRateMul', 'speedMul', 'goldRateMul',
-  'unitCap', 'baseRegenRate', 'turretFireRateMul'
+  'unitCap', 'baseRegenRate', 'turretFireRateMul',
+  'aiDifficulty', 'powerupsEnabled'
 ]);
 // Settings that only take effect on reset (change team count, start gold, etc.)
 const STRUCTURAL_KEYS = new Set([
-  'teamCount', 'teamNames', 'startGold', 'mode', 'target', 'baseHealth'
+  'teamCount', 'teamNames', 'startGold', 'mode', 'target', 'baseHealth',
+  'teamColors', 'arenaShape', 'obstacles'
 ]);
 
 function bindSettings(){
@@ -592,7 +900,8 @@ function bindSettings(){
       group.querySelectorAll('.opt').forEach(o=>o.classList.remove('selected'));
       e.target.classList.add('selected');
       const raw = e.target.dataset.val;
-      const newVal = isNaN(+raw) ? raw : +raw;
+      let newVal = isNaN(+raw) ? raw : +raw;
+      newVal = _coerceSetting(key, newVal);
       state.settings[key] = newVal;
       if (key==='mode'){ updateTargetLabel(); updateBaseHealthVisibility(); }
       if (key==='teamCount') updateTeamNameRowVisibility();
@@ -627,6 +936,29 @@ function bindSettings(){
       onSettingChanged('teamNames');
     });
   });
+  // team color pickers
+  document.querySelectorAll('#team-names-inputs input[type="color"]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const id = +inp.dataset.colorId;
+      state.settings.teamColors[id] = inp.value;
+      onSettingChanged('teamColors');
+    });
+  });
+  // difficulty selects
+  document.querySelectorAll('#diff-inputs select[data-diff-id]').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const id = +sel.dataset.diffId;
+      state.settings.aiDifficulty[id] = +sel.value;
+      // aiDifficulty is live (takes effect next AI buy tick)
+      onSettingChanged('aiDifficulty');
+    });
+  });
+}
+
+// powerupsEnabled stores boolean; option pills give string "true"/"false"
+function _coerceSetting(key, val){
+  if (key === 'powerupsEnabled') return val === 'true' || val === true;
+  return val;
 }
 
 // Called whenever any setting changes. Apply live changes immediately (if running);
@@ -716,8 +1048,8 @@ function updateTargetLabel(){
 }
 
 function applyDefaults(){
-  Object.assign(state.settings, {...DEFAULTS});
-  // reset UI
+  Object.assign(state.settings, JSON.parse(JSON.stringify(DEFAULTS)));
+  // reset UI option pills
   document.querySelectorAll('.opts').forEach(group => {
     const key = group.dataset.key;
     const want = String(state.settings[key]);
@@ -727,9 +1059,10 @@ function applyDefaults(){
   });
   const setSlider=(id,key,fmt)=>{
     const el=document.getElementById(id);
+    if (!el) return;
     const val=document.getElementById(id+'-val');
     el.value = state.settings[key];
-    val.textContent = fmt(state.settings[key]);
+    if (val) val.textContent = fmt(state.settings[key]);
   };
   setSlider('fireRate','fireRateMul',v=>(+v).toFixed(1)+'×');
   setSlider('speed','speedMul',v=>(+v).toFixed(1)+'×');
@@ -745,9 +1078,62 @@ function applyDefaults(){
     inp.value = '';
   });
   state.settings.teamNames = ['','','',''];
+  // reset team color pickers to original neon palette
+  const defaultColors = ['#39ff14','#ff2bd6','#ffea00','#00e7ff'];
+  document.querySelectorAll('#team-names-inputs input[type="color"]').forEach(inp => {
+    const id = +inp.dataset.colorId;
+    inp.value = defaultColors[id];
+  });
+  state.settings.teamColors = [null,null,null,null];
+  // reset difficulty selects
+  document.querySelectorAll('#diff-inputs select[data-diff-id]').forEach(sel => {
+    sel.value = '1';
+  });
+  state.settings.aiDifficulty = [1,1,1,1];
   updateTargetLabel();
   updateTeamNameRowVisibility();
   updateBaseHealthVisibility();
+}
+
+// Adjust HSL lightness to derive a glow/dark variant from a hex color
+function _adjColor(hex, lightDelta){
+  if (!hex) return hex;
+  const m = hex.match(/^#([0-9a-f]{6})$/i);
+  if (!m) return hex;
+  let r=parseInt(m[1].slice(0,2),16), g=parseInt(m[1].slice(2,4),16), b=parseInt(m[1].slice(4,6),16);
+  // RGB → HSL
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h, s, l = (max+min)/2;
+  if (max===min){ h=s=0; }
+  else {
+    const d = max-min;
+    s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h = (g-b)/d + (g<b?6:0); break;
+      case g: h = (b-r)/d + 2; break;
+      case b: h = (r-g)/d + 4; break;
+    }
+    h /= 6;
+  }
+  l = Math.max(0, Math.min(1, l + lightDelta));
+  // HSL → RGB
+  function hue2rgb(p,q,t){
+    if(t<0) t+=1; if(t>1) t-=1;
+    if(t<1/6) return p+(q-p)*6*t;
+    if(t<1/2) return q;
+    if(t<2/3) return p+(q-p)*(2/3-t)*6;
+    return p;
+  }
+  if (s===0){ r=g=b=l; }
+  else {
+    const q = l<0.5 ? l*(1+s) : l+s-l*s;
+    const p = 2*l-q;
+    r = hue2rgb(p,q,h+1/3);
+    g = hue2rgb(p,q,h);
+    b = hue2rgb(p,q,h-1/3);
+  }
+  return '#'+[r,g,b].map(x=>{const v=Math.round(x*255).toString(16);return v.length===1?'0'+v:v;}).join('');
 }
 
 // -------- TEAMS / SPAWNERS --------
@@ -755,7 +1141,20 @@ function buildTeams(){
   state.teams = [];
   const useBase = BASE_HP_MODES.has(state.settings.mode);
   for (let i=0; i<state.settings.teamCount; i++){
-    const def = TEAM_DEFS[i];
+    const baseDef = TEAM_DEFS[i];
+    // Apply custom color if set — derive glow & dark via HSL adjustment
+    const customColor = state.settings.teamColors[i];
+    let def;
+    if (customColor){
+      def = {
+        ...baseDef,
+        core: customColor,
+        glow: _adjColor(customColor, +0.18),
+        dark: _adjColor(customColor, -0.30)
+      };
+    } else {
+      def = baseDef;
+    }
     const customName = (state.settings.teamNames[i]||'').trim();
     const team = {
       id:i, def,
@@ -764,8 +1163,8 @@ function buildTeams(){
       totalEarned: state.settings.startGold,
       kills: 0,
       wins: 0,
-      defeated: false,        // base destroyed this round (rounds) / permanent (elim)
-      eliminated: false,      // permanent elimination (elim mode only)
+      defeated: false,
+      eliminated: false,
       aiCooldown: rand(0.3, 1.5),
       spawners: [],
       base: null,
@@ -791,33 +1190,63 @@ function buildTeams(){
 
 function layoutSpawners(){
   const W = state.arena.w, H = state.arena.h;
-  // Base sits closer to the corner; spawners form a line/arc pushing toward arena center.
-  const baseMap = {
-    tl: { cx: W*0.13, cy: H*0.17 },
-    tr: { cx: W*0.87, cy: H*0.17 },
-    bl: { cx: W*0.13, cy: H*0.83 },
-    br: { cx: W*0.87, cy: H*0.83 }
-  };
-  const spawnCenterMap = {
-    tl: { cx: W*0.26, cy: H*0.28 },
-    tr: { cx: W*0.74, cy: H*0.28 },
-    bl: { cx: W*0.26, cy: H*0.72 },
-    br: { cx: W*0.74, cy: H*0.72 }
-  };
-  for (const t of state.teams){
-    // Base
-    if (t.base){
-      const b = baseMap[t.def.corner];
-      t.base.x = b.cx;
-      t.base.y = b.cy;
+
+  // Read actual HUD panel rectangles (positioned in CSS) so the base never sits under them.
+  // On mobile-strip layout panels are above the arena, so corner zones are arena-corners as before.
+  const arenaRect = document.getElementById('arena-container').getBoundingClientRect();
+  const panelZones = { tl:null, tr:null, bl:null, br:null };
+  document.querySelectorAll('.hud-panel').forEach((panel,i) => {
+    if (getComputedStyle(panel).display === 'none') return;
+    const r = panel.getBoundingClientRect();
+    // Panel position relative to arena
+    const relX = r.left - arenaRect.left;
+    const relY = r.top  - arenaRect.top;
+    const relX2 = relX + r.width;
+    const relY2 = relY + r.height;
+    // Only treat as a zone if panel actually overlaps the arena (desktop corner mode)
+    if (relX2 < 0 || relX > W || relY2 < 0 || relY > H) return;
+    const corner = (i===0?'tl':i===1?'tr':i===2?'bl':'br');
+    panelZones[corner] = { x:relX, y:relY, x2:relX2, y2:relY2 };
+  });
+
+  const margin = 28; // safe gap from panel edge or arena edge
+  const cornerCenter = (corner) => {
+    const z = panelZones[corner];
+    if (z){
+      // Push base just past the panel's far inner edge, plus margin
+      let cx, cy;
+      if (corner === 'tl'){ cx = z.x2 + margin + 30; cy = z.y2 + margin + 12; }
+      else if (corner === 'tr'){ cx = z.x  - margin - 30; cy = z.y2 + margin + 12; }
+      else if (corner === 'bl'){ cx = z.x2 + margin + 30; cy = z.y  - margin - 12; }
+      else                     { cx = z.x  - margin - 30; cy = z.y  - margin - 12; }
+      // Clamp inside arena
+      cx = Math.max(60, Math.min(W-60, cx));
+      cy = Math.max(60, Math.min(H-60, cy));
+      return { cx, cy };
     }
-    // Spawners in an arc facing the arena center
-    const sc = spawnCenterMap[t.def.corner];
+    // No panel zone (mobile): use arena-corner percentages
+    const map = {
+      tl:{cx:W*0.13, cy:H*0.13}, tr:{cx:W*0.87, cy:H*0.13},
+      bl:{cx:W*0.13, cy:H*0.87}, br:{cx:W*0.87, cy:H*0.87}
+    };
+    return map[corner];
+  };
+
+  for (const t of state.teams){
+    const c = cornerCenter(t.def.corner);
+    if (t.base){ t.base.x = c.cx; t.base.y = c.cy; }
+    // Spawners offset slightly toward arena center
+    const cx = W/2, cy = H/2;
+    const dx = cx - c.cx, dy = cy - c.cy;
+    const dlen = Math.hypot(dx, dy) || 1;
+    const ux = dx/dlen, uy = dy/dlen;
+    const offset = Math.min(W,H)*0.10;
+    const sc = { cx: c.cx + ux*offset, cy: c.cy + uy*offset };
     const n = 3;
     t.spawners = [];
     for (let i=0;i<n;i++){
       const angle = (i/n)*Math.PI*2 + (t.id*0.7);
-      const rad = Math.min(W,H)*0.055;
+      const rad = Math.min(W,H)*0.045;
       t.spawners.push({
         x: sc.cx + Math.cos(angle)*rad,
         y: sc.cy + Math.sin(angle)*rad,
@@ -866,6 +1295,115 @@ function teamAliveCount(teamId){
   let n=0;
   for (const u of state.units) if (!u.dead && u.team.id===teamId) n++;
   return n;
+}
+
+// -------- OBSTACLES --------
+function generateObstacles(){
+  state.obstacles.length = 0;
+  const setting = state.settings.obstacles;
+  if (setting === 'none') return;
+  const W = state.arena.w, H = state.arena.h;
+  const count = setting === 'few' ? 4 : 9;
+  // Place obstacles avoiding corners (where bases live) and arena edges
+  const safeRadius = Math.min(W, H) * 0.18;
+  const corners = state.teams.map(t => t.base ? {x:t.base.x, y:t.base.y} : null).filter(Boolean);
+  let attempts = 0;
+  while (state.obstacles.length < count && attempts < 80){
+    attempts++;
+    const x = rand(W*0.18, W*0.82);
+    const y = rand(H*0.18, H*0.82);
+    const r = rand(22, 36);
+    // Avoid bases
+    let ok = true;
+    for (const c of corners){
+      if (dist(x,y,c.x,c.y) < safeRadius){ ok=false; break; }
+    }
+    if (!ok) continue;
+    // Avoid other obstacles
+    for (const o of state.obstacles){
+      if (dist(x,y,o.x,o.y) < r + o.r + 30){ ok=false; break; }
+    }
+    if (!ok) continue;
+    state.obstacles.push({ x, y, r });
+  }
+}
+
+function inArenaShape(x, y){
+  // Returns true if point is within the configured arena shape
+  const W = state.arena.w, H = state.arena.h;
+  const shape = state.settings.arenaShape || 'rect';
+  if (shape === 'rect') return x>=0 && x<=W && y>=0 && y<=H;
+  if (shape === 'circle'){
+    const cx=W/2, cy=H/2, rx=W/2-10, ry=H/2-10;
+    const dx=(x-cx)/rx, dy=(y-cy)/ry;
+    return dx*dx + dy*dy <= 1;
+  }
+  if (shape === 'cross'){
+    // Two overlapping rectangles forming a plus
+    const W2=W*0.32, H2=H*0.32;
+    const inH = x>W2 && x<W-W2;     // horizontal corridor
+    const inV = y>H2 && y<H-H2;     // vertical corridor — wait this is wrong
+    // simpler: point is in cross if (x>=W*0.25 && x<=W*0.75) OR (y>=H*0.25 && y<=H*0.75)
+    return (x>=W*0.22 && x<=W*0.78) || (y>=H*0.22 && y<=H*0.78);
+  }
+  return true;
+}
+
+function obstacleAt(x, y, r){
+  // Returns colliding obstacle or null
+  for (const o of state.obstacles){
+    if (dist(x,y,o.x,o.y) < r + o.r) return o;
+  }
+  return null;
+}
+
+// -------- POWER-UPS --------
+const POWERUP_TYPES = [
+  { id:'gold',    label:'+50G',   color:'#ffd84a', desc:'Gold Rush' },
+  { id:'shield',  label:'SHLD',   color:'#7cf3ff', desc:'Shield (5s)' },
+  { id:'damage',  label:'2× DMG', color:'#ff6080', desc:'Double Damage (5s)' }
+];
+
+function spawnRandomPowerup(){
+  if (!state.settings.powerupsEnabled) return;
+  const W = state.arena.w, H = state.arena.h;
+  // Try a few random spots that aren't on obstacles or bases
+  for (let attempt=0; attempt<10; attempt++){
+    const x = rand(W*0.2, W*0.8);
+    const y = rand(H*0.2, H*0.8);
+    if (obstacleAt(x,y,18)) continue;
+    let nearBase = false;
+    for (const t of state.teams){
+      if (t.base && dist(x,y,t.base.x,t.base.y) < 80){ nearBase = true; break; }
+    }
+    if (nearBase) continue;
+    const type = POWERUP_TYPES[Math.floor(Math.random()*POWERUP_TYPES.length)];
+    state.powerups.push({ x, y, r:14, type, age:0, life:25 });  // disappears after 25s if uncollected
+    return;
+  }
+}
+
+function collectPowerup(unit, pu){
+  const team = unit.team;
+  if (pu.type.id === 'gold'){
+    team.gold += 50;
+    team.totalEarned += 50;
+  } else if (pu.type.id === 'shield'){
+    team._shieldUntil = state.matchTime + 5;
+  } else if (pu.type.id === 'damage'){
+    team._dmgBoostUntil = state.matchTime + 5;
+  }
+  Audio.powerup();
+  toast(`${team.name} collected ${pu.type.desc}`);
+  // Particle burst
+  for (let k=0;k<14;k++){
+    state.particles.push({
+      x:pu.x, y:pu.y, color:pu.type.color,
+      size:2+Math.random()*3,
+      vx:rand(-100,100), vy:rand(-100,100),
+      life:0.6, age:0
+    });
+  }
 }
 
 // -------- PROJECTILES --------
@@ -921,26 +1459,31 @@ function update(dt){
   // AI buy
   for (const t of state.teams){
     if (t.eliminated || t.defeated || state.roundOver) continue;
-    t.aiCooldown -= dt;
+    const diff = state.settings.aiDifficulty[t.id] !== undefined ? state.settings.aiDifficulty[t.id] : 1;
+    // Difficulty controls cooldown speed (easy = slow buys, brutal = fast)
+    t.aiCooldown -= dt * (0.55 + diff*0.25); // easy=0.55x, normal=0.8x, hard=1.05x, brutal=1.3x
     if (t.aiCooldown <= 0){
       t.aiCooldown = rand(0.6, 1.8);
       const aliveAllies = teamAliveCount(t.id);
       if (aliveAllies >= state.settings.unitCap) continue;
-      // Choose tier: probabilistic based on affordability + gold
       const affordable = TIERS.filter(tt => tt.cost <= t.gold);
       if (!affordable.length) continue;
-      const rich = t.gold > 60;
+      // Difficulty affects buy quality: brutal saves for big units, easy buys impulsively
+      const richThreshold = [40, 60, 80, 100][diff] || 60;
+      const rich = t.gold > richThreshold;
+      const splurgeProb = [0.20, 0.40, 0.55, 0.70][diff] || 0.4;
       let tier;
-      if (rich && Math.random()<0.4){
+      if (rich && Math.random() < splurgeProb){
         tier = affordable[affordable.length-1];
       } else {
-        // weight toward mid tier
+        // weighted by tier — brutal weights higher tiers more
         const weights = affordable.map(tt => {
-          if (tt.cost<=2) return 3;
-          if (tt.cost<=10) return 5;
-          if (tt.cost<=20) return 4;
-          if (tt.cost<=40) return 2;
-          return 1;
+          const base = [3, 5, 4, 2, 1][tt.index] || 1;
+          // Brutal AI shifts weight toward higher tiers
+          if (diff === 3) return base * (1 + tt.index*0.3);
+          if (diff === 2) return base * (1 + tt.index*0.15);
+          if (diff === 0) return base * (1 - tt.index*0.1); // easy AI tends low
+          return base;
         });
         const sum = weights.reduce((a,b)=>a+b,0);
         let r = Math.random()*sum;
@@ -951,7 +1494,18 @@ function update(dt){
         tier = tier || affordable[0];
       }
       t.gold -= tier.cost;
-      state.units.push(makeUnit(t, tier));
+      const newUnit = makeUnit(t, tier);
+      state.units.push(newUnit);
+      state.spawnLabels.push({
+        x: newUnit.x,
+        y: newUnit.y - newUnit.r - 4,
+        text: '+ ' + tier.tag.toUpperCase(),
+        color: t.def.core,
+        glow: t.def.core,
+        age: 0,
+        life: 1.8,
+        rise: 32
+      });
     }
   }
 
@@ -964,6 +1518,32 @@ function update(dt){
         t.base.hp = Math.min(t.base.maxHp, t.base.hp + regenRate * dt);
       }
     }
+  }
+
+  // Power-ups: spawn periodically, age out, check collisions
+  if (state.settings.powerupsEnabled){
+    state.powerupSpawnAcc += dt;
+    if (state.powerupSpawnAcc > rand(12, 18) && state.powerups.length < 3){
+      state.powerupSpawnAcc = 0;
+      spawnRandomPowerup();
+    }
+    for (const pu of state.powerups){
+      pu.age += dt;
+      if (pu._taken) continue;
+      // Pulse animation handled in render
+      // Check collision with any unit
+      for (const u of state.units){
+        if (u.dead) continue;
+        if (dist(u.x, u.y, pu.x, pu.y) < u.r + pu.r){
+          pu._taken = true;
+          collectPowerup(u, pu);
+          break;
+        }
+      }
+    }
+    state.powerups = state.powerups.filter(pu => !pu._taken && pu.age < pu.life);
+  } else if (state.powerups.length){
+    state.powerups.length = 0;
   }
 
   // Turrets — each alive base auto-fires at nearest enemy unit in range
@@ -1016,14 +1596,22 @@ function update(dt){
     let moveTarget = null, fireTarget = null;
 
     if (u.role === 'base_rusher'){
-      // Use assigned base; reassign if destroyed/defeated. Switch to easier base if ours is fortified.
+      // Use assigned base; reassign if destroyed/defeated.
       let base = u.assignedBase;
       if (!base || base.hp <= 0 || base.team.defeated){
         const valid = state.teams.filter(t => t.id !== u.team.id && t.base && t.base.hp > 0 && !t.defeated);
-        // Pick base with lowest HP (opportunistic)
         if (valid.length){
-          valid.sort((a,b) => a.base.hp - b.base.hp);
-          base = valid[0].base;
+          // Weighted random: lower-HP bases more likely but not guaranteed (avoids feedback gang-up)
+          // Each base gets weight = (1 - hp_pct*0.6), so full HP base = 0.4 weight, dead-ish = 1.0
+          const weights = valid.map(t => 1 - 0.6*(t.base.hp/t.base.maxHp));
+          const sum = weights.reduce((a,b)=>a+b,0);
+          let r = Math.random()*sum;
+          let chosen = valid[0];
+          for (let i=0;i<valid.length;i++){
+            r -= weights[i];
+            if (r<=0){ chosen = valid[i]; break; }
+          }
+          base = chosen.base;
         } else base = null;
         u.assignedBase = base;
       }
@@ -1093,6 +1681,7 @@ function update(dt){
       if (u.fireCooldown <= 0){
         u.fireCooldown = u.fireInterval/1000;
         fireAt(u, fireTarget.x, fireTarget.y, fireTarget);
+        Audio.shot();
       }
     }
 
@@ -1123,6 +1712,17 @@ function update(dt){
     // Clamp to arena
     u.x = clamp(u.x, u.r+4, state.arena.w - u.r-4);
     u.y = clamp(u.y, u.r+4, state.arena.h - u.r-4);
+
+    // Push out of obstacles
+    for (const o of state.obstacles){
+      const dx = u.x - o.x, dy = u.y - o.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const minD = u.r + o.r + 1;
+      if (d < minD){
+        u.x = o.x + dx/d * minD;
+        u.y = o.y + dy/d * minD;
+      }
+    }
   }
 
   // Projectiles
@@ -1135,16 +1735,30 @@ function update(dt){
     if (p.trail.length>6) p.trail.shift();
     if (p.traveled > p.range){ p.dead = true; continue; }
     if (p.x<0||p.y<0||p.x>state.arena.w||p.y>state.arena.h){ p.dead=true; continue; }
+    // Obstacle block
+    if (obstacleAt(p.x, p.y, 2)){
+      p.dead = true;
+      spawnParticle(p.x, p.y, '#888', 2, 0.15);
+      continue;
+    }
+    // Effective damage = base × firer's damage-boost (if active)
+    const T = state.matchTime;
+    const firerBoost = (p.team._dmgBoostUntil && p.team._dmgBoostUntil > T) ? 2.0 : 1.0;
     // collision — first check enemy units
     let hit = false;
     for (const u of state.units){
       if (u.dead || u.team.id === p.team.id) continue;
       if (dist(p.x,p.y,u.x,u.y) < u.r + 3){
-        u.hp -= p.damage;
+        // Shield reduces damage to target's team
+        const targetShield = (u.team._shieldUntil && u.team._shieldUntil > T) ? 0.3 : 1.0;
+        const dmg = p.damage * firerBoost * targetShield;
+        u.hp -= dmg;
         p.dead = true; hit = true;
         spawnParticle(p.x, p.y, u.team.def.core, 3, 0.2);
+        Audio.hit();
         if (u.hp <= 0){
           u.dead = true;
+          Audio.unitDeath();
           p.team.kills++;
           const killReward = 2 + Math.round(u.tier.cost * 0.25);
           p.team.gold += killReward;
@@ -1167,9 +1781,12 @@ function update(dt){
       if (t.id === p.team.id || t.defeated || !t.base || t.base.hp<=0) continue;
       const b = t.base;
       if (dist(p.x,p.y,b.x,b.y) < b.r + 3){
-        b.hp -= p.damage;
+        const baseShield = (t._shieldUntil && t._shieldUntil > T) ? 0.3 : 1.0;
+        const dmg = p.damage * firerBoost * baseShield;
+        b.hp -= dmg;
         p.dead = true;
         spawnParticle(p.x, p.y, t.def.core, 3, 0.25);
+        Audio.hit();
         if (b.hp <= 0){
           b.hp = 0;
           defeatTeam(t);
@@ -1185,10 +1802,41 @@ function update(dt){
     if (pt.vx!==undefined){ pt.x += pt.vx*dt; pt.y += pt.vy*dt; }
   }
 
+  // Spawn labels (floating tier-name announcements)
+  for (const lb of state.spawnLabels){ lb.age += dt; }
+
+  // ===== POWER-UPS =====
+  if (state.settings.powerupsEnabled){
+    state.powerupSpawnAcc += dt;
+    // Spawn one every ~12-18 seconds
+    if (state.powerupSpawnAcc > rand(12, 18) && state.powerups.length < 4){
+      state.powerupSpawnAcc = 0;
+      spawnRandomPowerup();
+    }
+    // Age existing powerups + check collisions
+    for (const pu of state.powerups){
+      pu.age += dt;
+      if (pu.collected) continue;
+      // Closest unit pickup
+      for (const u of state.units){
+        if (u.dead) continue;
+        if (dist(u.x, u.y, pu.x, pu.y) < u.r + pu.r){
+          pu.collected = true;
+          collectPowerup(u, pu);
+          break;
+        }
+      }
+    }
+    state.powerups = state.powerups.filter(p => !p.collected && p.age < p.life);
+  } else {
+    state.powerups.length = 0;
+  }
+
   // Cleanup
   state.units = state.units.filter(u => !u.dead);
   state.projectiles = state.projectiles.filter(p => !p.dead);
   state.particles = state.particles.filter(p => p.age < p.life);
+  state.spawnLabels = state.spawnLabels.filter(lb => lb.age < lb.life);
 
   // End-condition checks
   checkEndConditions(dt);
@@ -1199,6 +1847,7 @@ function update(dt){
 function defeatTeam(t){
   if (t.defeated) return;
   t.defeated = true;
+  Audio.baseDestroyed();
   // Spectacular explosion at the base
   for (let k=0;k<36;k++){
     state.particles.push({
@@ -1286,11 +1935,26 @@ function scoreFireTarget(u, enemy, effRange){
 }
 
 function findBestFireTarget(u, effRange){
+  // Consider both units and bases — pick whichever scores higher.
   let best = null, bestS = -Infinity;
+  // Units
   for (const o of state.units){
     if (o.dead || o.team.id === u.team.id) continue;
     const s = scoreFireTarget(u, o, effRange);
     if (s > bestS){ bestS = s; best = o; }
+  }
+  // Bases — give them a strong base score so they don't get ignored when in range
+  const dps = u.weapon.damage * u.tier.dmgMul;
+  for (const t of state.teams){
+    if (t.id === u.team.id || t.defeated || !t.base || t.base.hp<=0) continue;
+    const b = t.base;
+    const d = dist(u.x, u.y, b.x, b.y);
+    if (d > effRange) continue;
+    let s = 60; // flat: bases are valuable when in range
+    if (b.hp <= dps) s += 80;
+    else if (b.hp <= dps*3) s += 30;
+    s += (1 - d/effRange) * 15;
+    if (s > bestS){ bestS = s; best = b; }
   }
   return best;
 }
@@ -1365,6 +2029,7 @@ function checkEndConditions(dt){
         const bonus = 20 + Math.round(state.settings.startGold*0.3);
         w.gold += bonus;
         w.totalEarned += bonus;
+        Audio.roundWin();
         toast(`${w.name} wins round ${state.roundNum} (+${bonus}G)`);
         if (w.wins >= state.settings.target){
           endMatch(w, `First to ${state.settings.target} wins`);
@@ -1383,6 +2048,7 @@ function nextRound(){
   state.units.length = 0;
   state.projectiles.length = 0;
   state.particles.length = 0;
+  state.spawnLabels.length = 0;
   // Restore all teams: bases back to full, defeated flag cleared, small gold top-up
   for (const t of state.teams){
     t.defeated = false;
@@ -1398,6 +2064,8 @@ function nextRound(){
 function endMatch(winner, reason){
   state.matchOver = true;
   state.running = false;
+  Audio.matchWin();
+  History.recordMatch(winner, reason);
   showGameOver(winner, reason);
 }
 
@@ -1412,9 +2080,30 @@ function render(){
   // team quadrant tints
   drawQuadrantTints(W,H);
 
+  // arena shape outline (circle/cross — rect is just edges already drawn by grid)
+  drawArenaShape(W,H);
+
+  // obstacles
+  for (const o of state.obstacles){
+    drawObstacle(o);
+  }
+
   // bases (draw first so spawners/units appear in front)
   for (const t of state.teams){
     if (t.base) drawBase(t);
+  }
+
+  // shield auras around teams' bases when active
+  const T = state.matchTime;
+  for (const t of state.teams){
+    if (t._shieldUntil && t._shieldUntil > T && t.base && t.base.hp>0){
+      drawShieldAura(t.base.x, t.base.y, t.base.r + 18, t.def.core, (t._shieldUntil - T)/5);
+    }
+  }
+
+  // powerups
+  for (const pu of state.powerups){
+    drawPowerup(pu);
   }
 
   // spawners
@@ -1444,6 +2133,11 @@ function render(){
     ctx.fill();
   }
   ctx.globalAlpha = 1;
+
+  // spawn labels
+  for (const lb of state.spawnLabels){
+    drawSpawnLabel(lb);
+  }
 
   // paused overlay
   if (state.paused){
@@ -1501,6 +2195,110 @@ function drawQuadrantTints(W,H){
     ctx.fillStyle = grad;
     ctx.fillRect(...r);
   }
+}
+
+function drawArenaShape(W, H){
+  const shape = state.settings.arenaShape || 'rect';
+  if (shape === 'rect') return;  // grid already shows it
+  ctx.save();
+  ctx.strokeStyle = 'rgba(140,160,220,.35)';
+  ctx.lineWidth = 2;
+  ctx.shadowBlur = 6;
+  ctx.shadowColor = 'rgba(140,160,220,.4)';
+  if (shape === 'circle'){
+    ctx.beginPath();
+    ctx.ellipse(W/2, H/2, W/2-10, H/2-10, 0, 0, Math.PI*2);
+    ctx.stroke();
+    // Dim outside the circle
+    ctx.fillStyle = 'rgba(0,0,0,.35)';
+    ctx.beginPath();
+    ctx.rect(0, 0, W, H);
+    ctx.ellipse(W/2, H/2, W/2-10, H/2-10, 0, 0, Math.PI*2, true);
+    ctx.fill('evenodd');
+  } else if (shape === 'cross'){
+    // Outline two overlapping rectangles
+    ctx.beginPath();
+    ctx.rect(W*0.22, 0, W*0.56, H);
+    ctx.rect(0, H*0.22, W, H*0.56);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawObstacle(o){
+  ctx.save();
+  ctx.fillStyle = 'rgba(40,48,72,.85)';
+  ctx.strokeStyle = 'rgba(180,195,235,.55)';
+  ctx.lineWidth = 1.5;
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = 'rgba(120,140,200,.4)';
+  // Hexagonal stone block
+  ctx.beginPath();
+  for (let i=0;i<6;i++){
+    const a = i*Math.PI/3;
+    const px = o.x + Math.cos(a)*o.r;
+    const py = o.y + Math.sin(a)*o.r;
+    if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // Inner hatch
+  ctx.strokeStyle = 'rgba(180,195,235,.2)';
+  ctx.beginPath();
+  ctx.moveTo(o.x - o.r*0.5, o.y);
+  ctx.lineTo(o.x + o.r*0.5, o.y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawPowerup(pu){
+  const t = pu.age;
+  const pulse = 1 + Math.sin(t*5) * 0.12;
+  const fadeIn = Math.min(1, t/0.4);
+  const fadeOut = pu.life - t < 3 ? Math.max(0, (pu.life - t)/3) : 1;
+  const alpha = fadeIn * fadeOut;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.shadowBlur = 18;
+  ctx.shadowColor = pu.type.color;
+  // Outer ring
+  ctx.strokeStyle = pu.type.color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(pu.x, pu.y, pu.r * pulse, 0, Math.PI*2);
+  ctx.stroke();
+  // Inner diamond
+  ctx.fillStyle = pu.type.color;
+  ctx.beginPath();
+  ctx.moveTo(pu.x, pu.y - pu.r*0.55);
+  ctx.lineTo(pu.x + pu.r*0.55, pu.y);
+  ctx.lineTo(pu.x, pu.y + pu.r*0.55);
+  ctx.lineTo(pu.x - pu.r*0.55, pu.y);
+  ctx.closePath();
+  ctx.fill();
+  // Label below
+  ctx.shadowBlur = 4;
+  ctx.fillStyle = pu.type.color;
+  ctx.font = '700 9px -apple-system, Segoe UI, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(pu.type.label, pu.x, pu.y + pu.r + 11);
+  ctx.restore();
+}
+
+function drawShieldAura(x, y, r, color, fade){
+  ctx.save();
+  ctx.globalAlpha = 0.4 + fade*0.4;
+  ctx.shadowBlur = 14;
+  ctx.shadowColor = '#7cf3ff';
+  ctx.strokeStyle = '#7cf3ff';
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([6, 4]);
+  ctx.lineDashOffset = -state.matchTime * 20;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawSpawner(sp, def){
@@ -1651,49 +2449,245 @@ function drawTurret(base, team){
 
 function drawUnit(u){
   const def = u.team.def;
+  const r = u.r;
+  const tierIdx = u.tier.index;
+
   ctx.save();
-  // body shadow
   ctx.shadowBlur = 10;
   ctx.shadowColor = def.core;
-  // body (head circle + torso line)
-  ctx.fillStyle = def.core;
   ctx.strokeStyle = def.glow;
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.arc(u.x, u.y - u.r*0.3, u.r*0.55, 0, Math.PI*2);
-  ctx.fill();
-  // body torso
-  ctx.beginPath();
-  ctx.moveTo(u.x, u.y - u.r*0.1);
-  ctx.lineTo(u.x, u.y + u.r*0.8);
-  ctx.lineWidth = u.r*0.35;
-  ctx.strokeStyle = def.core;
-  ctx.stroke();
-  ctx.restore();
 
-  // HP bar
-  const barW = u.r*2.2;
-  const pct = Math.max(0, u.hp / u.maxHp);
-  ctx.fillStyle = 'rgba(0,0,0,.6)';
-  ctx.fillRect(u.x - barW/2, u.y - u.r*1.2 - 6, barW, 3);
-  ctx.fillStyle = def.core;
-  ctx.fillRect(u.x - barW/2, u.y - u.r*1.2 - 6, barW*pct, 3);
-
-  // Tactical marker: small chevron above base rushers
-  if (u.role === 'base_rusher'){
+  // Champion gets a pulsing glowing aura ring (always visible, easy to spot at distance)
+  if (tierIdx === 4){
+    const pulse = 1 + Math.sin(state.matchTime * 4) * 0.08;
     ctx.save();
-    ctx.strokeStyle = def.glow;
-    ctx.lineWidth = 1.3;
-    ctx.shadowBlur = 5;
+    ctx.shadowBlur = 22;
     ctx.shadowColor = def.core;
-    const cy = u.y - u.r*1.2 - 11;
+    ctx.strokeStyle = def.glow;
+    ctx.lineWidth = 1.8;
+    ctx.globalAlpha = 0.85;
     ctx.beginPath();
-    ctx.moveTo(u.x - 3, cy + 2);
-    ctx.lineTo(u.x,     cy - 2);
-    ctx.lineTo(u.x + 3, cy + 2);
+    ctx.arc(u.x, u.y, r*1.45*pulse, 0, Math.PI*2);
     ctx.stroke();
     ctx.restore();
   }
+  // Elite gets a faint aura (less prominent than Champion)
+  else if (tierIdx === 3){
+    ctx.save();
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = def.core;
+    ctx.strokeStyle = def.glow;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.45;
+    ctx.beginPath();
+    ctx.arc(u.x, u.y, r*1.25, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ----- HEAD -----
+  ctx.fillStyle = def.core;
+  if (tierIdx === 4){
+    // Champion: hexagonal helmet
+    const hr = r*0.65, hy = u.y - r*0.4;
+    ctx.beginPath();
+    for (let i=0;i<6;i++){
+      const a = i*Math.PI/3 - Math.PI/2;
+      const px = u.x + Math.cos(a)*hr;
+      const py = hy + Math.sin(a)*hr;
+      if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    // Helmet spike (top notch)
+    ctx.beginPath();
+    ctx.moveTo(u.x - 3, hy - hr + 1);
+    ctx.lineTo(u.x,     hy - hr - 4);
+    ctx.lineTo(u.x + 3, hy - hr + 1);
+    ctx.closePath();
+    ctx.fill();
+  } else if (tierIdx === 3){
+    // Elite: round head with crown notch
+    const hr = r*0.58, hy = u.y - r*0.35;
+    ctx.beginPath();
+    ctx.arc(u.x, hy, hr, 0, Math.PI*2);
+    ctx.fill();
+    // Crown notch on top
+    ctx.beginPath();
+    ctx.moveTo(u.x - hr*0.5, hy - hr + 1);
+    ctx.lineTo(u.x - hr*0.2, hy - hr - 3);
+    ctx.lineTo(u.x,          hy - hr + 0);
+    ctx.lineTo(u.x + hr*0.2, hy - hr - 3);
+    ctx.lineTo(u.x + hr*0.5, hy - hr + 1);
+    ctx.closePath();
+    ctx.fill();
+  } else {
+    // Scout/Soldier/Heavy: classic round head
+    const hr = tierIdx === 2 ? r*0.6 : (tierIdx === 1 ? r*0.55 : r*0.5);
+    const hy = u.y - r*0.3;
+    ctx.beginPath();
+    ctx.arc(u.x, hy, hr, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // ----- TORSO / BODY -----
+  if (tierIdx === 0){
+    // Scout: thin runner
+    ctx.beginPath();
+    ctx.moveTo(u.x, u.y - r*0.05);
+    ctx.lineTo(u.x, u.y + r*0.7);
+    ctx.lineWidth = r*0.28;
+    ctx.strokeStyle = def.core;
+    ctx.stroke();
+  } else if (tierIdx === 1){
+    // Soldier: standard torso
+    ctx.beginPath();
+    ctx.moveTo(u.x, u.y - r*0.05);
+    ctx.lineTo(u.x, u.y + r*0.8);
+    ctx.lineWidth = r*0.4;
+    ctx.strokeStyle = def.core;
+    ctx.stroke();
+  } else if (tierIdx === 2){
+    // Heavy: wider torso with shoulder pauldrons
+    ctx.beginPath();
+    ctx.moveTo(u.x, u.y);
+    ctx.lineTo(u.x, u.y + r*0.85);
+    ctx.lineWidth = r*0.55;
+    ctx.strokeStyle = def.core;
+    ctx.stroke();
+    // Pauldrons (shoulder dots)
+    ctx.beginPath();
+    ctx.arc(u.x - r*0.45, u.y + r*0.05, r*0.22, 0, Math.PI*2);
+    ctx.arc(u.x + r*0.45, u.y + r*0.05, r*0.22, 0, Math.PI*2);
+    ctx.fillStyle = def.core;
+    ctx.fill();
+  } else if (tierIdx === 3){
+    // Elite: tall body with central armor plate
+    ctx.beginPath();
+    ctx.moveTo(u.x, u.y);
+    ctx.lineTo(u.x, u.y + r*0.95);
+    ctx.lineWidth = r*0.55;
+    ctx.strokeStyle = def.core;
+    ctx.stroke();
+    // Center chest plate accent line
+    ctx.strokeStyle = def.glow;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(u.x, u.y + r*0.15);
+    ctx.lineTo(u.x, u.y + r*0.7);
+    ctx.stroke();
+  } else {
+    // Champion: massive armoured body with diagonal accent stripes
+    ctx.beginPath();
+    ctx.moveTo(u.x, u.y);
+    ctx.lineTo(u.x, u.y + r*1.0);
+    ctx.lineWidth = r*0.7;
+    ctx.strokeStyle = def.core;
+    ctx.stroke();
+    // Pauldrons
+    ctx.fillStyle = def.core;
+    ctx.beginPath();
+    ctx.arc(u.x - r*0.55, u.y + r*0.1, r*0.28, 0, Math.PI*2);
+    ctx.arc(u.x + r*0.55, u.y + r*0.1, r*0.28, 0, Math.PI*2);
+    ctx.fill();
+    // Chest X accent
+    ctx.strokeStyle = def.glow;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(u.x - r*0.2, u.y + r*0.25);
+    ctx.lineTo(u.x + r*0.2, u.y + r*0.6);
+    ctx.moveTo(u.x + r*0.2, u.y + r*0.25);
+    ctx.lineTo(u.x - r*0.2, u.y + r*0.6);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // ----- HP BAR -----
+  const barW = r*2.2;
+  const pct = Math.max(0, u.hp / u.maxHp);
+  ctx.fillStyle = 'rgba(0,0,0,.6)';
+  ctx.fillRect(u.x - barW/2, u.y - r*1.2 - 6, barW, 3);
+  ctx.fillStyle = def.core;
+  ctx.fillRect(u.x - barW/2, u.y - r*1.2 - 6, barW*pct, 3);
+
+  // ----- TIER LETTER BADGE (below unit, always visible) -----
+  // Champion gets a star prefix for extra emphasis
+  const letter = u.tier.letter + (u.tier.index === 4 ? '★' : '');
+  ctx.save();
+  ctx.font = `700 ${Math.round(r*0.85)}px -apple-system, Segoe UI, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  // Subtle dark backdrop pill
+  const padX = 3, badgeY = u.y + r + 2;
+  const tw = ctx.measureText(letter).width;
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.fillRect(u.x - tw/2 - padX, badgeY - 1, tw + padX*2, r*0.95 + 2);
+  ctx.shadowBlur = 4;
+  ctx.shadowColor = def.core;
+  ctx.fillStyle = def.glow;
+  ctx.fillText(letter, u.x, badgeY);
+  ctx.restore();
+
+  // ----- BASE RUSHER CHEVRON -----
+  if (u.role === 'base_rusher'){
+    ctx.save();
+    ctx.strokeStyle = def.glow;
+    ctx.lineWidth = 1.5;
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = def.core;
+    const cy = u.y - r*1.2 - 12;
+    ctx.beginPath();
+    ctx.moveTo(u.x - 4, cy + 3);
+    ctx.lineTo(u.x,     cy - 3);
+    ctx.lineTo(u.x + 4, cy + 3);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ----- POWER-UP STATUS RINGS -----
+  const T = state.matchTime;
+  if (u.team._dmgBoostUntil && u.team._dmgBoostUntil > T){
+    ctx.save();
+    ctx.strokeStyle = '#ff6080';
+    ctx.lineWidth = 1.5;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = '#ff6080';
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.arc(u.x, u.y, r*1.2, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  if (u.team._shieldUntil && u.team._shieldUntil > T){
+    ctx.save();
+    ctx.strokeStyle = '#7cf3ff';
+    ctx.lineWidth = 1.4;
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = '#7cf3ff';
+    ctx.globalAlpha = 0.55;
+    ctx.setLineDash([3,2]);
+    ctx.beginPath();
+    ctx.arc(u.x, u.y, r*1.35, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawSpawnLabel(lb){
+  const t = lb.age / lb.life;
+  // Fade-in for first 15% then linear fade-out
+  const alpha = t < 0.15 ? (t/0.15) : (1 - (t-0.15)/0.85);
+  if (alpha <= 0) return;
+  const y = lb.y - lb.rise * t;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = lb.glow;
+  ctx.fillStyle = lb.color;
+  ctx.font = '700 14px -apple-system, Segoe UI, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(lb.text, lb.x, y);
+  ctx.restore();
 }
 
 function drawProjectile(p){
@@ -1847,6 +2841,7 @@ function startMatch(){
   state.units.length=0;
   state.projectiles.length=0;
   state.particles.length=0;
+  state.spawnLabels.length=0;
   state.matchTime=0;
   state.roundTime=0;
   state.goldTickAcc=0;
@@ -1858,6 +2853,16 @@ function startMatch(){
   state.running = true;
   toast('Battle begins!');
   updatePauseBtn();
+  // Render HUD panels first, then re-layout bases/spawners with knowledge of where they sit
+  requestAnimationFrame(() => {
+    renderHuds();
+    requestAnimationFrame(() => {
+      layoutSpawners();
+      generateObstacles();
+    });
+  });
+  state.powerups.length = 0;
+  state.powerupSpawnAcc = 0;
 }
 
 function resetMatch(){ startMatch(); }
@@ -1927,6 +2932,85 @@ document.getElementById('btn-defaults').addEventListener('click', applyDefaults)
 document.getElementById('legend-toggle').addEventListener('click', ()=>{
   document.getElementById('unit-legend').classList.toggle('collapsed');
 });
+
+// Mute toggle
+document.getElementById('btn-mute').addEventListener('click', (e)=>{
+  ensureAudio();
+  // Toggle: if currently enabled (sound on), mute it; if currently muted, unmute
+  const nowMuted = Audio.enabled;  // become muted if currently sound-on
+  Audio.setMuted(nowMuted);
+  e.target.textContent = nowMuted ? '🔇' : '🔊';
+  e.target.title = nowMuted ? 'Unmute sound' : 'Mute sound';
+});
+
+// History modal
+document.getElementById('btn-history').addEventListener('click', ()=>{
+  renderHistoryModal();
+  document.getElementById('history-modal').style.display='flex';
+});
+document.getElementById('btn-close-history').addEventListener('click', ()=>{
+  document.getElementById('history-modal').style.display='none';
+});
+document.getElementById('btn-clear-history').addEventListener('click', ()=>{
+  if (!confirm('Delete all match history and leaderboard data? This cannot be undone.')) return;
+  History.clear();
+  renderHistoryModal();
+});
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+function renderHistoryModal(){
+  const lb = History.getLeaderboard();
+  const lbList = document.getElementById('leaderboard-list');
+  if (!lb.length){
+    lbList.innerHTML = '<div class="empty-state">No matches played yet — finish one to start tracking.</div>';
+  } else {
+    lbList.innerHTML = lb.map((r,i) => `
+      <div class="lb-row" style="border-color:${r.color}">
+        <div class="pos">#${i+1}</div>
+        <div class="lb-name" style="color:${r.color}">${escHtml(r.name)}</div>
+        <div class="lb-stat">Wins<b>${r.wins}</b></div>
+        <div class="lb-stat">Kills<b>${r.kills}</b></div>
+        <div class="lb-stat">Played<b>${r.matches}</b></div>
+      </div>
+    `).join('');
+  }
+  const matches = History.getMatches();
+  const mList = document.getElementById('matches-list');
+  if (!matches.length){
+    mList.innerHTML = '<div class="empty-state">No matches played yet.</div>';
+  } else {
+    mList.innerHTML = matches.map(m => {
+      const ago = humanAgo(m.ts);
+      const dur = m.duration < 60 ? m.duration+'s' : Math.floor(m.duration/60)+'m '+(m.duration%60)+'s';
+      return `
+        <div class="match-row">
+          <div>
+            <div class="mr-winner" style="color:${m.winnerColor}">${escHtml(m.winner)}</div>
+            <div class="mr-mode">${escHtml(MODE_LABEL[m.mode]||m.mode)} · ${escHtml(m.reason)}</div>
+          </div>
+          <div class="mr-time">${dur}</div>
+          <div class="mr-time">${ago}</div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function escHtml(s){ return String(s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function humanAgo(ts){
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s<60) return 'just now';
+  if (s<3600) return Math.floor(s/60)+'m ago';
+  if (s<86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
 document.getElementById('btn-replay').addEventListener('click', ()=>{
   document.getElementById('gameover-modal').style.display='none';
   resetMatch();
@@ -1946,6 +3030,17 @@ window.addEventListener('keydown', e=>{
     }
   }
 });
+
+// Init audio on first user gesture (browsers require this for AudioContext)
+let _audioReady = false;
+function ensureAudio(){
+  if (_audioReady) return;
+  Audio.init();
+  Audio.resume();
+  _audioReady = true;
+}
+document.addEventListener('click', ensureAudio, { once: false });
+document.addEventListener('touchstart', ensureAudio, { once: false });
 
 // -------- BOOT --------
 bindSettings();
